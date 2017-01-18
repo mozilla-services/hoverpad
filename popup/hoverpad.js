@@ -15,7 +15,6 @@ initialize();
 function initialize() {
   var gettingContent = browser.storage.sync.get('hoverpad');
   gettingContent.then((result) => {
-    console.log(result);
     inputBody.value = result.hoverpad || '';
   }, onError);
 }
@@ -24,19 +23,15 @@ function initialize() {
 var timeout = null;
 
 function onInput(event) {
-  console.log('Event');
   if (timeout) {
-    console.log('clearTimeout');
     clearTimeout(timeout);
   }
   timeout = setTimeout(function() {
-    console.log('save');
     storeNote(event.target.value);
   }, 500);
 }
 
 function storeNote(body) {
-  console.log(body);
   var storingNote = browser.storage.sync.set({hoverpad: body});
   storingNote.then(blinkGreen, onError);
 }
