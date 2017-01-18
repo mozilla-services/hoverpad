@@ -34,9 +34,9 @@ to persist the notes.
 4. Switch `webextensions.storage.sync.enabled` to `true`
 5. Make sure Firefox Sync is configured in your computer and the preferences checkbox is checked.
 
-### From the XPI in the release page.
+### From addons.mozilla.org
 
-Open the XPI with Firefox and install it.
+Grab it from AMO: https://addons.mozilla.org/fr/firefox/addon/hoverpad/
 
 ### From the source code
 
