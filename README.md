@@ -1,5 +1,7 @@
 # Hoverpad
 
+![Hoverpad](https://cloud.githubusercontent.com/assets/229453/22067366/401e3e16-dd91-11e6-93d1-6a9c988fd32b.png)
+
 A persistent pad — click a button in your browser and add some notes,
 which will persist even after browser restarts and be synced between
 your browsers.
