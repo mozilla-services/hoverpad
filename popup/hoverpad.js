@@ -3,6 +3,12 @@
 var inputBody = document.querySelector('.pad textarea');
 inputBody.addEventListener('input', onInput);
 
+var lock = document.querySelector('#lock');
+lock.addEventListener('click', toggleReadonly);
+
+var connect = document.querySelector('#connect');
+connect.addEventListener('click', openSyncPanel);
+
 /* generic error handler */
 function onError(error) {
   console.log(error);
@@ -13,10 +19,27 @@ function onError(error) {
 initialize();
 
 function initialize() {
+  if (typeof browser == "undefined") {
+    return;
+  }
   var gettingContent = browser.storage.sync.get('hoverpad');
   gettingContent.then((result) => {
     inputBody.value = result.hoverpad || '';
   }, onError);
+}
+
+
+function toggleReadonly() {
+  inputBody.readOnly = !inputBody.readOnly;
+  if (inputBody.readOnly) {
+    lock.textContent = 'Unlock';
+  } else {
+    lock.textContent = 'Lock';
+  }
+}
+
+function openSyncPanel() {
+  browser.runtime.openOptionsPage();
 }
 
 /* function to store a new note in storage */
