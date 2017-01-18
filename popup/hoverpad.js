@@ -31,6 +31,7 @@ function initialize() {
 
 
 function toggleLock() {
+  lock.classList.toggle('locked');
   if (inputBody.style.display === 'none') {
     inputBody.style.display = '';
     // Put focus at the end of the textarea.

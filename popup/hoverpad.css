@@ -58,11 +58,11 @@ h1 {
 	position: absolute;
 	top: 5px;
 	left: 20px;
-	z-index: 10;
+	z-index: 30;
 	font-size: 20px;
 	font-weight: normal;
 	font-family: sans-serif;
-	color: #bbb;
+	color: #999;
 }
 
 #lock {
@@ -73,6 +73,21 @@ h1 {
 	z-index: 10;
 	text-decoration: none;
 	font-size: 16px;
+}
+
+#lock.locked {
+	display: block;
+	top: 0;
+	left: 0;
+	text-align: center;
+	padding-top: 220px;
+	color: black;
+	font-weight: bold;
+	font-size: 30px;
+	height: 100%;
+	width: 100%;
+	background: #ebb;
+	z-index: 20;
 }
 
 span {
