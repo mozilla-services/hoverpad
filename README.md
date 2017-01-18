@@ -38,6 +38,14 @@ to persist the notes.
 
 Grab it from AMO: https://addons.mozilla.org/fr/firefox/addon/hoverpad/
 
+If you want to install while it is not verified yet, you can:
+
+1. Go to `about:config`
+2. Toggle `xpinstall.signatures.required` to true
+3. You will get automatic updates
+
+If you don't care about automatic updates, you can also install the latest XPI from there: https://github.com/Natim/hoverpad/releases
+
 ### From the source code
 
 1. Go to `about:debugging`
