@@ -33,6 +33,11 @@ function initialize() {
 function toggleLock() {
   if (inputBody.style.display === 'none') {
     inputBody.style.display = '';
+    // Put focus at the end of the textarea.
+    inputBody.focus();
+    const val = inputBody.value;
+    inputBody.value = '';
+    inputBody.value = val.trim() + '\n';
     lock.textContent = 'Lock';
   } else {
     inputBody.style.display =  'none'
