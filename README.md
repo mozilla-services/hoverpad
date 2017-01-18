@@ -28,7 +28,7 @@ to persist the notes.
 
 ### Activate the storage.sync API.
 
-1. Go to about:config
+1. Go to `about:config`
 2. Search for webextensions
 3. Change `webextensions.storage.sync.serverURL` with `https://webextensions.settings.services.mozilla.com/v1`
 4. Switch `webextensions.storage.sync.enabled` to `true`
@@ -38,9 +38,10 @@ to persist the notes.
 
 Open the XPI with Firefox and install it.
 
-### From the Github\
+### From the source code
 
 1. Go to `about:debugging`
 2. Click the Load a temporary module
 3. Select the manifest.json
 4. You would need to do that each time you restart Firefox.
+5. You can click on the `Refresh` button to change the files and reload the add-on.
