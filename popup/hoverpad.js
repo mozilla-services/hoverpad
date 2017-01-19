@@ -1,18 +1,11 @@
 /* initialise variables */
 
 /* Initialize storage */
-let storage;
-
-if (typeof browser == "undefined") {
-  if (typeof chrome != "undefined") {
-    storage = chrome.storage;
-  }
+if (typeof chrome == "undefined") {
   console.log('You are not in a webextensions');
-} else {
-  storage = browser.storage;
 }
 
-if (!storage.hasOwnProperty('sync')) {
+if (!chrome.storage.hasOwnProperty('sync')) {
   throw new Error('Storage Sync API is not suppported in your browser.');
 }
 
@@ -27,10 +20,17 @@ lock.addEventListener('click', toggleLock);
 
 initialize();
 
+/* generic error handler */
+function onError(error) {
+  console.log(error);
+}
+
+
 function initialize() {
   toggleLock();
-  var gettingContent = storage.sync.get(
+  var gettingContent = chrome.storage.sync.get(
     'hoverpad', (result) => {
+      if (chrome.runtime.lastError) return onError(chrome.runtime.lastError);
       inputBody.value = result.hoverpad || '';
     });
 }
@@ -65,7 +65,8 @@ function onInput(event) {
 }
 
 function storeNote(body) {
-  var storingNote = storage.sync.set({hoverpad: body}, () => {
+  var storingNote = chrome.storage.sync.set({hoverpad: body}, () => {
+    if (chrome.runtime.lastError) return onError(chrome.runtime.lastError);
     blinkGreen();
   });
 }
