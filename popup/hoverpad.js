@@ -1,32 +1,38 @@
 /* initialise variables */
 
+/* Initialize storage */
+let storage;
+
+if (typeof browser == "undefined") {
+  if (typeof chrome != "undefined") {
+    storage = chrome.storage;
+  }
+  console.log('You are not in a webextensions');
+} else {
+  storage = browser.storage;
+}
+
+if (!storage.hasOwnProperty('sync')) {
+  throw new Error('Storage Sync API is not suppported in your browser.');
+}
+
+/* UX elements */
 var inputBody = document.querySelector('.pad textarea');
 inputBody.addEventListener('input', onInput);
 
 var lock = document.querySelector('#lock');
 lock.addEventListener('click', toggleLock);
 
-var connect = document.querySelector('#connect');
-connect.addEventListener('click', openSyncPanel);
-
-/* generic error handler */
-function onError(error) {
-  console.log(error);
-}
-
 /* display previously-saved stored notes on startup */
 
 initialize();
 
 function initialize() {
-  if (typeof browser == "undefined") {
-    return;
-  }
   toggleLock();
-  var gettingContent = browser.storage.sync.get('hoverpad');
-  gettingContent.then((result) => {
-    inputBody.value = result.hoverpad || '';
-  }, onError);
+  var gettingContent = storage.sync.get(
+    'hoverpad', (result) => {
+      inputBody.value = result.hoverpad || '';
+    });
 }
 
 
@@ -46,10 +52,6 @@ function toggleLock() {
   }
 }
 
-function openSyncPanel() {
-  browser.runtime.openOptionsPage();
-}
-
 /* function to store a new note in storage */
 var timeout = null;
 
@@ -63,8 +65,9 @@ function onInput(event) {
 }
 
 function storeNote(body) {
-  var storingNote = browser.storage.sync.set({hoverpad: body});
-  storingNote.then(blinkGreen, onError);
+  var storingNote = storage.sync.set({hoverpad: body}, () => {
+    blinkGreen();
+  });
 }
 
 function blinkGreen() {
