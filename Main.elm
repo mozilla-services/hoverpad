@@ -1,5 +1,6 @@
 port module Main exposing (..)
 
+import Time
 import Html
 import Html.Attributes
 import Html.Events
@@ -13,6 +14,10 @@ type Msg
     | NewPassphrase String
     | NewData String
     | GetData
+    | Lock
+    | SetData String
+    | DataSaved String
+    | UnBlink Time.Time
 
 
 type alias Model =
@@ -20,12 +25,13 @@ type alias Model =
     , email : String
     , passphrase : String
     , content : String
+    , blink : Bool
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" ! []
+    Model True "" "" "" False ! []
 
 
 
@@ -35,6 +41,9 @@ init =
 update : Msg -> Model -> ( Model, Cmd msg )
 update message model =
     case message of
+        UnBlink time ->
+            { model | blink = False } ! []
+
         NewEmail email ->
             { model | email = email } ! []
 
@@ -46,6 +55,15 @@ update message model =
 
         NewData content ->
             { model | content = content, lock = False } ! []
+
+        Lock ->
+            { model | lock = True, content = "" } ! []
+
+        SetData content ->
+            { model | content = content } ! [ setData content ]
+
+        DataSaved content ->
+            { model | blink = True } ! []
 
 
 
@@ -99,25 +117,47 @@ formView model =
 
 padView : Model -> Html.Html Msg
 padView model =
-    Html.div [ Html.Attributes.class "pad" ]
-        [ Html.textarea []
-            [ Html.text model.content ]
-        ]
+    let
+        blinkClass =
+            case model.blink of
+                True ->
+                    "blink"
+
+                False ->
+                    ""
+    in
+        Html.div [ Html.Attributes.class "pad" ]
+            [ Html.textarea
+                [ Html.Attributes.class blinkClass
+                , Html.Events.onInput SetData
+                ]
+                [ Html.text model.content ]
+            ]
 
 
 view : Model -> Html.Html Msg
 view model =
-    Html.div [ Html.Attributes.class "outer-wrapper" ]
-        [ Html.h1 [] [ Html.text "Universal Notepad" ]
-        , Html.a
-            [ Html.Attributes.id "lock"
-            , Html.Attributes.href "#"
-            , Html.Attributes.class "hidden"
+    let
+        lockClass =
+            case model.lock of
+                True ->
+                    "hidden"
+
+                False ->
+                    ""
+    in
+        Html.div [ Html.Attributes.class "outer-wrapper" ]
+            [ Html.h1 [] [ Html.text "Universal Notepad" ]
+            , Html.a
+                [ Html.Attributes.id "lock"
+                , Html.Attributes.href "#"
+                , Html.Attributes.class lockClass
+                , Html.Events.onClick Lock
+                ]
+                [ Html.text "Lock" ]
+            , router model
+            , Html.span [] [ Html.text "Available everywhere with your Email and Passphrase!" ]
             ]
-            [ Html.text "Lock" ]
-        , router model
-        , Html.span [] [ Html.text "Available everywhere with your Email and Passphrase!" ]
-        ]
 
 
 
@@ -127,7 +167,10 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ newData NewData ]
+        [ newData NewData
+        , dataSaved DataSaved
+        , Time.every (Time.millisecond * 200) UnBlink
+        ]
 
 
 
@@ -151,3 +194,9 @@ port getData : String -> Cmd msg
 
 
 port newData : (String -> msg) -> Sub msg
+
+
+port setData : String -> Cmd msg
+
+
+port dataSaved : (String -> msg) -> Sub msg

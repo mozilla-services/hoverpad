@@ -39,6 +39,30 @@
         }
       });
 
+      var setDataDebounceTimeout;
+      app.ports.setData.subscribe(function(content) {
+        if (setDataDebounceTimeout) {
+          clearTimeout(setDataDebounceTimeout);
+        }
+        setDataDebounceTimeout = setTimeout(function() {
+          if (typeof chrome == "undefined") {
+            app.ports.dataSaved.send(content);
+          } else {
+            var data = {};
+            data[key] = content;
+            chrome.storage.local.set(
+              data,
+              () => {
+                if (chrome.runtime.lastError) {
+                  console.error('Nothing retrieved', chrome.runtime.lastError);
+                }
+
+                app.ports.dataSaved.send(content);
+            });
+          }
+        }, 500);
+      });
+
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
       const passphrase = 'trululala';

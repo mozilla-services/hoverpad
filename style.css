@@ -48,6 +48,10 @@ textarea {
 	resize: none;
 }
 
+.blink {
+    background: lightgreen;
+}
+
 .hidden {
 	display: none;
 }
