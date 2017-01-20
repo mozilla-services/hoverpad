@@ -35,33 +35,52 @@ update message model =
 -- View
 
 
+formView : Model -> Html.Html Msg
+formView model =
+    Html.div [ Html.Attributes.class "form" ]
+        [ Html.div []
+            [ Html.label [ Html.Attributes.for "email" ] [ Html.text "Email" ]
+            , Html.input
+                [ Html.Attributes.id "email"
+                , Html.Attributes.type_ "text"
+                , Html.Attributes.placeholder "joe.bart@team.tld"
+                ]
+                []
+            ]
+        , Html.div []
+            [ Html.label [ Html.Attributes.for "password" ] [ Html.text "Passphrase" ]
+            , Html.input
+                [ Html.Attributes.id "password"
+                , Html.Attributes.type_ "password"
+                , Html.Attributes.placeholder "Passphrase"
+                ]
+                []
+            ]
+        , Html.div []
+            [ Html.button [] [ Html.text "Login and unlock" ]
+            ]
+        ]
+
+
+padView : Model -> Html.Html Msg
+padView model =
+    Html.div [ Html.Attributes.class "pad" ] [ Html.textarea [] [] ]
+
+
 view : Model -> Html.Html Msg
 view model =
-    --   Form
-    Html.div [ Html.Attributes.class "form-outer-wrapper" ]
-        [ Html.div [ Html.Attributes.class "form" ]
-            [ Html.div []
-                [ Html.label [ Html.Attributes.for "email" ] [ Html.text "Email" ]
-                , Html.input
-                    [ Html.Attributes.id "email"
-                    , Html.Attributes.type_ "text"
-                    , Html.Attributes.placeholder "joe.bart@team.tld"
-                    ]
-                    []
-                ]
-            , Html.div []
-                [ Html.label [ Html.Attributes.for "password" ] [ Html.text "Passphrase" ]
-                , Html.input
-                    [ Html.Attributes.id "password"
-                    , Html.Attributes.type_ "password"
-                    , Html.Attributes.placeholder "Passphrase"
-                    ]
-                    []
-                ]
-            , Html.div []
-                [ Html.button [] [ Html.text "Login and unlock" ]
-                ]
+    -- If model.lock → Display the form
+    -- Else → Display the unencrypted pad
+    Html.div [ Html.Attributes.class "outer-wrapper" ]
+        [ Html.h1 [] [ Html.text "Universal Notepad" ]
+        , Html.a
+            [ Html.Attributes.id "lock"
+            , Html.Attributes.href "#"
+            , Html.Attributes.class "hidden"
             ]
+            [ Html.text "Lock" ]
+        , formView model
+        , Html.span [] [ Html.text "Available everywhere with your Email and Passphrase!" ]
         ]
 
 
@@ -95,17 +114,3 @@ port getData : String -> Cmd msg
 
 
 port newData : (String -> msg) -> Sub msg
-
-
-
--- <div class="form-outer-wrapper">
--- </div>
--- <div class="outer-wrapper hidden">
---   <h1>Universal Notepad</h1>
---   <a id="lock" href="#">Lock</a>
---   <div class="pad">
---     <textarea></textarea>
---   </div>
---   <span>Available everywhere you're signed in to Firefox</span>
---   <a id="connect" href="#">Connect a device</a>
--- </div>
