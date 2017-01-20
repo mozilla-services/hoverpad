@@ -22,94 +22,9 @@
     <script src="hoverpad.js"></script>
     <script>
       var app = Elm.Main.embed(document.getElementById("root"));
-
-      const KEY = "hoverpad";
-      var key;
-
-      app.ports.getData.subscribe(function(keySuffix) {
-        if (typeof chrome == "undefined") {
-          key = KEY + '-' + keySuffix;
-          app.ports.newData.send(["ok", localStorage.getItem(key) || ""]);
-        } else {
-          chrome.storage.local.get(
-            key,
-            data => {
-              if (chrome.runtime.lastError) {
-                console.error('Nothing retrieved', chrome.runtime.lastError);
-              }
-
-              app.ports.newData.send(["ok", data[key]]);
-          });
-        }
-      });
-
-      var setDataDebounceTimeout;
-      app.ports.setData.subscribe(function(content) {
-        if (setDataDebounceTimeout) {
-          clearTimeout(setDataDebounceTimeout);
-        }
-        setDataDebounceTimeout = setTimeout(function() {
-          if (typeof chrome == "undefined") {
-            localStorage.setItem(key, content)
-            app.ports.dataSaved.send(key);
-          } else {
-            var data = {};
-            data[key] = content;
-            chrome.storage.local.set(
-              data,
-              () => {
-                if (chrome.runtime.lastError) {
-                  console.error('Nothing retrieved', chrome.runtime.lastError);
-                }
-
-                app.ports.dataSaved.send(key);
-            });
-          }
-        }, 500);
-      });
-
-      const encoder = new TextEncoder();
-      const decoder = new TextDecoder();
-      const passphrase = 'trululala';
-      const email = 'foobar@baz.com';
-      const passphraseKey = encoder.encode(passphrase);
-      const initVector = encoder.encode(email);
-      const data = encoder.encode('this is some test to encrypt');
-
-      crypto.subtle.importKey(
-          'raw',
-          passphraseKey,
-          'PBKDF2',
-          false,
-          ['deriveBits', 'deriveKey'])
-      .then(key => {
-          return crypto.subtle.deriveKey(
-              {name: 'PBKDF2',
-               salt: initVector,
-               iterations: 100,
-               'hash': 'sha-256'},
-              key,
-              {name: 'AES-GCM', 'length': 256},
-              false,
-              ['encrypt', 'decrypt'])
-      })
-      .then(key => {
-          return crypto.subtle.encrypt(
-                {name: 'AES-GCM',
-                 iv: initVector},
-                key,
-                data)
-          .then(encrypted => {
-                    return crypto.subtle.decrypt(
-                      {name: 'AES-GCM',
-                       iv: initVector},
-                      key,
-                      encrypted)
-          })
-      })
-      .then(decrypted => console.log("decrypted: ", decoder.decode(decrypted)))
-      .catch(error => console.error("failed decryption", error));
-
     </script>
+
+    <script src="encryption.js"></script>
+    <script src="ports.js"></script>
   </body>
 </html>

@@ -52,7 +52,7 @@ update message model =
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            model ! [ getData model.email ]
+            model ! [ getData (model.email ++ "," ++ model.passphrase) ]
 
         NewData results ->
             case (List.head results) of
@@ -78,8 +78,13 @@ update message model =
         SetData content ->
             { model | content = content } ! [ setData content ]
 
-        DataSaved key ->
-            { model | blink = True } ! []
+        DataSaved status ->
+            case status of
+                "ok" ->
+                    { model | blink = True } ! []
+
+                _ ->
+                    model ! []
 
 
 
