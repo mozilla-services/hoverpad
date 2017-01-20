@@ -38,23 +38,17 @@
     <script>
       var app = Elm.Main.embed(document.getElementById("root"));
 
-      app.ports.getData.subscribe(function() {
+      app.ports.getData.subscribe(function(key) {
         var data = chrome.storage.local.get(
-            'hoverpad',
+            key,
             data => {
               if (chrome.runtime.lastError) {
-                console.error('Nothing retrieved', chrome.runtime.lastError));
+                console.error('Nothing retrieved', chrome.runtime.lastError);
               }
 
               app.ports.newData.send(data.hoverpad);
             });
       });
-
-  var gettingContent = chrome.storage.sync.get(
-    'hoverpad', (result) => {
-      if (chrome.runtime.lastError) return onError(chrome.runtime.lastError);
-      inputBody.value = result.hoverpad || '';
-    });
 
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
