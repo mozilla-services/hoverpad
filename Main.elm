@@ -62,7 +62,7 @@ update message model =
         SetData content ->
             { model | content = content } ! [ setData content ]
 
-        DataSaved content ->
+        DataSaved key ->
             { model | blink = True } ! []
 
 

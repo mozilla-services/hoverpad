@@ -23,12 +23,14 @@
     <script>
       var app = Elm.Main.embed(document.getElementById("root"));
 
-      app.ports.getData.subscribe(function(key) {
+      var KEY = "hoverpad";
+
+      app.ports.getData.subscribe(function() {
         if (typeof chrome == "undefined") {
-          app.ports.newData.send(key);
+          app.ports.newData.send(localStorage.getItem(KEY) || "");
         } else {
           chrome.storage.local.get(
-            key,
+            KEY,
             data => {
               if (chrome.runtime.lastError) {
                 console.error('Nothing retrieved', chrome.runtime.lastError);
@@ -46,10 +48,11 @@
         }
         setDataDebounceTimeout = setTimeout(function() {
           if (typeof chrome == "undefined") {
-            app.ports.dataSaved.send(content);
+            localStorage.setItem(KEY, content)
+            app.ports.dataSaved.send(KEY);
           } else {
             var data = {};
-            data[key] = content;
+            data[KEY] = content;
             chrome.storage.local.set(
               data,
               () => {
@@ -57,7 +60,7 @@
                   console.error('Nothing retrieved', chrome.runtime.lastError);
                 }
 
-                app.ports.dataSaved.send(content);
+                app.ports.dataSaved.send(KEY);
             });
           }
         }, 500);
