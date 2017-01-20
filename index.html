@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css"/>
+  </head>
+
+  <body>
+      <div class="form-outer-wrapper">
+        <div class="form">
+          <div>
+            <label for="email">Email</label>
+            <input id="email" type="text" placeholder="joe.bart@team.tld"/>
+          </div>
+          <div>
+            <label for="password">Passphrase</label>
+            <input id="password" type="password" placeholder="Password" />
+          </div>
+          <div>
+            <button>Login and unlock</button>
+          </div>
+        </div>
+      </div>
+      <div class="outer-wrapper hidden">
+        <h1>Universal Notepad</h1>
+        <a id="lock" href="#">Lock</a>
+        <div class="pad">
+          <textarea></textarea>
+        </div>
+        <span>Available everywhere you're signed in to Firefox</span>
+        <a id="connect" href="#">Connect a device</a>
+      </div>
+
+    <div id="root"></div>
+
+    <script src="hoverpad.js"></script>
+    <script>
+      var app = Elm.Main.embed(document.getElementById("root"));
+
+      app.ports.getData.subscribe(function() {
+        var data = chrome.storage.local.get(
+            'hoverpad',
+            data => {
+              if (chrome.runtime.lastError) {
+                console.error('Nothing retrieved', chrome.runtime.lastError));
+              }
+
+              app.ports.newData.send(data.hoverpad);
+            });
+      });
+
+  var gettingContent = chrome.storage.sync.get(
+    'hoverpad', (result) => {
+      if (chrome.runtime.lastError) return onError(chrome.runtime.lastError);
+      inputBody.value = result.hoverpad || '';
+    });
+
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      const passphrase = 'trululala';
+      const email = 'foobar@baz.com';
+      const passphraseKey = encoder.encode(passphrase);
+      const initVector = encoder.encode(email);
+      const data = encoder.encode('this is some test to encrypt');
+
+      crypto.subtle.importKey(
+          'raw',
+          passphraseKey,
+          'PBKDF2',
+          false,
+          ['deriveBits', 'deriveKey'])
+      .then(key => {
+          return crypto.subtle.deriveKey(
+              {name: 'PBKDF2',
+               salt: initVector,
+               iterations: 100,
+               'hash': 'sha-256'},
+              key,
+              {name: 'AES-GCM', 'length': 256},
+              false,
+              ['encrypt', 'decrypt'])
+      })
+      .then(key => {
+          return crypto.subtle.encrypt(
+                {name: 'AES-GCM',
+                 iv: initVector},
+                key,
+                data)
+          .then(encrypted => {
+                    return crypto.subtle.decrypt(
+                      {name: 'AES-GCM',
+                       iv: initVector},
+                      key,
+                      encrypted)
+          })
+      })
+      .then(decrypted => console.log("decrypted: ", decoder.decode(decrypted)))
+      .catch(error => console.error("failed decryption", error));
+
+    </script>
+  </body>
+</html>
