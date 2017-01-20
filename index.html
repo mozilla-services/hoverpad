@@ -23,20 +23,22 @@
     <script>
       var app = Elm.Main.embed(document.getElementById("root"));
 
-      var KEY = "hoverpad";
+      const KEY = "hoverpad";
+      var key;
 
-      app.ports.getData.subscribe(function() {
+      app.ports.getData.subscribe(function(keySuffix) {
         if (typeof chrome == "undefined") {
-          app.ports.newData.send(localStorage.getItem(KEY) || "");
+          key = KEY + '-' + keySuffix;
+          app.ports.newData.send(["ok", localStorage.getItem(key) || ""]);
         } else {
           chrome.storage.local.get(
-            KEY,
+            key,
             data => {
               if (chrome.runtime.lastError) {
                 console.error('Nothing retrieved', chrome.runtime.lastError);
               }
 
-              app.ports.newData.send(data.hoverpad);
+              app.ports.newData.send(["ok", data[key]]);
           });
         }
       });
@@ -48,11 +50,11 @@
         }
         setDataDebounceTimeout = setTimeout(function() {
           if (typeof chrome == "undefined") {
-            localStorage.setItem(KEY, content)
-            app.ports.dataSaved.send(KEY);
+            localStorage.setItem(key, content)
+            app.ports.dataSaved.send(key);
           } else {
             var data = {};
-            data[KEY] = content;
+            data[key] = content;
             chrome.storage.local.set(
               data,
               () => {
@@ -60,7 +62,7 @@
                   console.error('Nothing retrieved', chrome.runtime.lastError);
                 }
 
-                app.ports.dataSaved.send(KEY);
+                app.ports.dataSaved.send(key);
             });
           }
         }, 500);

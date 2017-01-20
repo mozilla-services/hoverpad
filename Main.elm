@@ -12,7 +12,7 @@ import Html.Events
 type Msg
     = NewEmail String
     | NewPassphrase String
-    | NewData String
+    | NewData (List String)
     | GetData
     | Lock
     | SetData String
@@ -26,12 +26,13 @@ type alias Model =
     , passphrase : String
     , content : String
     , blink : Bool
+    , error : String
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" False ! []
+    Model True "" "" "" False "" ! []
 
 
 
@@ -51,10 +52,25 @@ update message model =
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            model ! [ getData "hoverpad" ]
+            model ! [ getData model.email ]
 
-        NewData content ->
-            { model | content = content, lock = False } ! []
+        NewData results ->
+            case (List.head results) of
+                Just status ->
+                    case status of
+                        "ok" ->
+                            case (List.head (List.reverse results)) of
+                                Just content ->
+                                    { model | content = content, lock = False } ! []
+
+                                Nothing ->
+                                    model ! []
+
+                        _ ->
+                            { model | passphrase = "", lock = True, error = "Wrong passphrase" } ! []
+
+                Nothing ->
+                    model ! []
 
         Lock ->
             { model | lock = True, content = "" } ! []
@@ -193,7 +209,7 @@ main =
 port getData : String -> Cmd msg
 
 
-port newData : (String -> msg) -> Sub msg
+port newData : (List String -> msg) -> Sub msg
 
 
 port setData : String -> Cmd msg
