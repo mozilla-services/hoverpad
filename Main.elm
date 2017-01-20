@@ -1,6 +1,7 @@
 port module Main exposing (..)
 
 import Html
+import Html.Attributes
 
 
 -- Model
@@ -36,7 +37,32 @@ update message model =
 
 view : Model -> Html.Html Msg
 view model =
-    Html.text "hello world"
+    --   Form
+    Html.div [ Html.Attributes.class "form-outer-wrapper" ]
+        [ Html.div [ Html.Attributes.class "form" ]
+            [ Html.div []
+                [ Html.label [ Html.Attributes.for "email" ] [ Html.text "Email" ]
+                , Html.input
+                    [ Html.Attributes.id "email"
+                    , Html.Attributes.type_ "text"
+                    , Html.Attributes.placeholder "joe.bart@team.tld"
+                    ]
+                    []
+                ]
+            , Html.div []
+                [ Html.label [ Html.Attributes.for "password" ] [ Html.text "Passphrase" ]
+                , Html.input
+                    [ Html.Attributes.id "password"
+                    , Html.Attributes.type_ "password"
+                    , Html.Attributes.placeholder "Passphrase"
+                    ]
+                    []
+                ]
+            , Html.div []
+                [ Html.button [] [ Html.text "Login and unlock" ]
+                ]
+            ]
+        ]
 
 
 
@@ -73,19 +99,6 @@ port newData : (String -> msg) -> Sub msg
 
 
 -- <div class="form-outer-wrapper">
---   <div class="form">
---     <div>
---       <label for="email">Email</label>
---       <input id="email" type="text" placeholder="joe.bart@team.tld"/>
---     </div>
---     <div>
---       <label for="password">Passphrase</label>
---       <input id="password" type="password" placeholder="Password" />
---     </div>
---     <div>
---       <button>Login and unlock</button>
---     </div>
---   </div>
 -- </div>
 -- <div class="outer-wrapper hidden">
 --   <h1>Universal Notepad</h1>

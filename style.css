@@ -20,6 +20,11 @@ body {
   height: inherit;
 }
 
+#root {
+  width: inherit;
+  height: inherit;
+}
+
 .outer-wrapper {
 	position: relative;
   overflow: hidden;
