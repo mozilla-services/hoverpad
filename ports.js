@@ -3,9 +3,16 @@ var credentials;
 var app = Elm.Main.embed(document.getElementById("root"));
 
 app.ports.getData.subscribe(function(token) {
-  document.querySelector('div[contenteditable]').addEventListener('blur', function(event) {
+  var debounceEvent;
+  document.querySelector('div[contenteditable]').addEventListener('input', function(event) {
     console.log('input detected', event.target);
-    app.ports.input.send(event.target.innerHTML);
+    if (debounceEvent) {
+      clearTimeout(debounceEvent);
+    }
+    debounceEvent = setTimeout(function() {
+      console.log('event triggered');
+      app.ports.input.send(event.target.innerHTML);
+    }, 800);
   });
 
   // Update global credentials state;
