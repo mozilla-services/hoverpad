@@ -52,7 +52,7 @@ update message model =
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            model ! [ getData (model.email ++ "," ++ model.passphrase) ]
+            { model | error = "" } ! [ getData (model.email ++ "," ++ model.passphrase) ]
 
         NewData results ->
             case (List.head results) of
@@ -73,7 +73,7 @@ update message model =
                     model ! []
 
         Lock ->
-            { model | lock = True, content = "" } ! []
+            { model | lock = True, content = "", passphrase = "" } ! []
 
         SetData content ->
             { model | content = content } ! [ setData content ]
@@ -107,6 +107,8 @@ formView : Model -> Html.Html Msg
 formView model =
     Html.div [ Html.Attributes.class "form" ]
         [ Html.div []
+            [ Html.text model.error ]
+        , Html.div []
             [ Html.label [ Html.Attributes.for "email" ] [ Html.text "Email" ]
             , Html.input
                 [ Html.Attributes.id "email"
