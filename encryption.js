@@ -110,7 +110,7 @@ function decrypt(passphrase, encryptedContent) {
     return Promise.resolve('Reset previously malformed saved pad');
   }
 
-  console.log('decrypt', passphrase, encryptedContent);
+  console.debug('decrypt', passphrase, encryptedContent);
 
   return generateKey(passphrase, salt)
     .then(decryptionKey => {
@@ -121,6 +121,8 @@ function decrypt(passphrase, encryptedContent) {
         parts.data)
     })
     .then(decryptedArrayBuffer => {
-      return decoder.decode(decryptedArrayBuffer);
+      const decrypted = decoder.decode(decryptedArrayBuffer);
+      console.debug("decrypted", decrypted);
+      return decrypted
     });
 }

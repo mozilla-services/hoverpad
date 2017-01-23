@@ -43,8 +43,8 @@ init =
 -- Handle contenteditable events
 
 
-textContentDecoder =
-    Json.Decode.at [ "target", "textContent" ] Json.Decode.string
+innerHtmlDecoder =
+    Json.Decode.at [ "target", "innerHtml" ] Json.Decode.string
 
 
 
@@ -146,9 +146,9 @@ padView model =
                 else
                     ""
             , Html.Attributes.contenteditable True
-            , Html.Events.on "blur" (Json.Decode.map SetData textContentDecoder)
+            , Html.Attributes.property "innerHTML" (Json.Encode.string model.content)
             ]
-            [ Html.text model.content ]
+            []
         ]
 
 
@@ -193,6 +193,7 @@ subscriptions model =
         , newError NewError
         , dataSaved DataSaved
         , dataNotSaved DataNotSaved
+        , input SetData
         , Time.every (Time.millisecond * 200) UnStored
         ]
 
@@ -230,3 +231,6 @@ port dataSaved : (String -> msg) -> Sub msg
 
 
 port dataNotSaved : (String -> msg) -> Sub msg
+
+
+port input : (String -> msg) -> Sub msg

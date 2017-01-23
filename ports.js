@@ -3,6 +3,11 @@ var credentials;
 var app = Elm.Main.embed(document.getElementById("root"));
 
 app.ports.getData.subscribe(function(token) {
+  document.querySelector('div[contenteditable]').addEventListener('blur', function(event) {
+    console.log('input detected', event.target);
+    app.ports.input.send(event.target.innerHTML);
+  });
+
   // Update global credentials state;
   credentials = token.split(',', 2);
   console.log(token, credentials);

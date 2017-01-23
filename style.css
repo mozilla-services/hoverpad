@@ -47,6 +47,10 @@ div[contenteditable] {
 	resize: none;
 }
 
+div[contenteditable] b {
+	filter: blur(4px);
+}
+
 .stored {
     background: lightgreen;
 }
