@@ -11,7 +11,7 @@ app.ports.getData.subscribe(function(token) {
   const passphrase = credentials[1];
   const key = KEY_PREFIX + '-' + email;
 
-  if (typeof chrome == "undefined") {
+  if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
     decryptAndNotify(passphrase, localStorage.getItem(key));
   } else {
     chrome.storage.local.get(
@@ -56,7 +56,7 @@ app.ports.setData.subscribe(function(content) {
 
     encrypt(passphrase, content)
       .then(encryptedContent => {
-        if (typeof chrome == "undefined") {
+        if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
           localStorage.setItem(key, encryptedContent)
           app.ports.dataSaved.send("");
         } else {

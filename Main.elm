@@ -43,8 +43,8 @@ init =
 -- Handle contenteditable events
 
 
-innerHtmlDecoder =
-    Json.Decode.at [ "target", "innerHTML" ] Json.Decode.string
+textContentDecoder =
+    Json.Decode.at [ "target", "textContent" ] Json.Decode.string
 
 
 
@@ -89,21 +89,15 @@ update message model =
 -- View
 
 
-router : Model -> Html.Html Msg
-router model =
-    -- If model.lock → Display the form
-    -- Else → Display the unencrypted pad
-    case model.lock of
-        True ->
-            formView model
-
-        False ->
-            padView model
-
-
 formView : Model -> Html.Html Msg
 formView model =
-    Html.div [ Html.Attributes.class "form" ]
+    Html.div
+        [ Html.Attributes.class <|
+            if model.lock then
+                "form"
+            else
+                "hidden"
+        ]
         [ Html.div []
             [ Html.text model.error ]
         , Html.div []
@@ -138,36 +132,29 @@ formView model =
 
 padView : Model -> Html.Html Msg
 padView model =
-    let
-        storedClass =
-            case model.stored of
-                True ->
+    Html.div
+        [ Html.Attributes.class <|
+            if model.lock then
+                "hidden"
+            else
+                "pad"
+        ]
+        [ Html.div
+            [ Html.Attributes.class <|
+                if model.stored then
                     "stored"
-
-                False ->
+                else
                     ""
-    in
-        Html.div [ Html.Attributes.class "pad" ]
-            [ Html.div
-                [ Html.Attributes.class storedClass
-                , Html.Attributes.contenteditable True
-                , Html.Events.on "blur" (Json.Decode.map SetData innerHtmlDecoder)
-                ]
-                [ Html.text model.content ]
+            , Html.Attributes.contenteditable True
+            , Html.Events.on "blur" (Json.Decode.map SetData textContentDecoder)
             ]
+            [ Html.text model.content ]
+        ]
 
 
 view : Model -> Html.Html Msg
 view model =
     let
-        lockClass =
-            case model.lock of
-                True ->
-                    "hidden"
-
-                False ->
-                    ""
-
         title =
             case model.lock of
                 True ->
@@ -181,11 +168,16 @@ view model =
             , Html.a
                 [ Html.Attributes.id "lock"
                 , Html.Attributes.href "#"
-                , Html.Attributes.class lockClass
+                , Html.Attributes.class <|
+                    if model.lock then
+                        "hidden"
+                    else
+                        ""
                 , Html.Events.onClick Lock
                 ]
                 [ Html.text "Lock" ]
-            , router model
+            , formView model
+            , padView model
             , Html.span [] [ Html.text "Available everywhere with your Email and Passphrase!" ]
             ]
 
