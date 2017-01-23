@@ -16,7 +16,6 @@ body {
   width: 750px;
   background: #000;
   margin: 0 auto;
-  padding: 2px;
   height: inherit;
 }
 
@@ -48,7 +47,7 @@ textarea {
 	resize: none;
 }
 
-.blink {
+.stored {
     background: lightgreen;
 }
 

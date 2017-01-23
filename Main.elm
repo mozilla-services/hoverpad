@@ -12,12 +12,14 @@ import Html.Events
 type Msg
     = NewEmail String
     | NewPassphrase String
-    | NewData (List String)
+    | NewData String
+    | NewError String
     | GetData
     | Lock
     | SetData String
     | DataSaved String
-    | UnBlink Time.Time
+    | DataNotSaved String
+    | UnStored Time.Time
 
 
 type alias Model =
@@ -25,7 +27,7 @@ type alias Model =
     , email : String
     , passphrase : String
     , content : String
-    , blink : Bool
+    , stored : Bool
     , error : String
     }
 
@@ -42,8 +44,8 @@ init =
 update : Msg -> Model -> ( Model, Cmd msg )
 update message model =
     case message of
-        UnBlink time ->
-            { model | blink = False } ! []
+        UnStored time ->
+            { model | stored = False } ! []
 
         NewEmail email ->
             { model | email = email } ! []
@@ -54,23 +56,11 @@ update message model =
         GetData ->
             { model | error = "" } ! [ getData (model.email ++ "," ++ model.passphrase) ]
 
-        NewData results ->
-            case (List.head results) of
-                Just status ->
-                    case status of
-                        "ok" ->
-                            case (List.head (List.reverse results)) of
-                                Just content ->
-                                    { model | content = content, lock = False } ! []
+        NewData content ->
+            { model | content = content, lock = False } ! []
 
-                                Nothing ->
-                                    model ! []
-
-                        _ ->
-                            { model | passphrase = "", lock = True, error = "Wrong passphrase" } ! []
-
-                Nothing ->
-                    model ! []
+        NewError error ->
+            { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
 
         Lock ->
             { model | lock = True, content = "", passphrase = "" } ! []
@@ -78,13 +68,11 @@ update message model =
         SetData content ->
             { model | content = content } ! [ setData content ]
 
-        DataSaved status ->
-            case status of
-                "ok" ->
-                    { model | blink = True } ! []
+        DataSaved _ ->
+            { model | stored = True } ! []
 
-                _ ->
-                    model ! []
+        DataNotSaved error ->
+            { model | error = (Debug.log "" error) } ! []
 
 
 
@@ -141,17 +129,17 @@ formView model =
 padView : Model -> Html.Html Msg
 padView model =
     let
-        blinkClass =
-            case model.blink of
+        storedClass =
+            case model.stored of
                 True ->
-                    "blink"
+                    "stored"
 
                 False ->
                     ""
     in
         Html.div [ Html.Attributes.class "pad" ]
             [ Html.textarea
-                [ Html.Attributes.class blinkClass
+                [ Html.Attributes.class storedClass
                 , Html.Events.onInput SetData
                 ]
                 [ Html.text model.content ]
@@ -168,9 +156,17 @@ view model =
 
                 False ->
                     ""
+
+        title =
+            case model.lock of
+                True ->
+                    "Universal Notepad"
+
+                False ->
+                    model.email
     in
         Html.div [ Html.Attributes.class "outer-wrapper" ]
-            [ Html.h1 [] [ Html.text "Universal Notepad" ]
+            [ Html.h1 [] [ Html.text title ]
             , Html.a
                 [ Html.Attributes.id "lock"
                 , Html.Attributes.href "#"
@@ -191,8 +187,10 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         [ newData NewData
+        , newError NewError
         , dataSaved DataSaved
-        , Time.every (Time.millisecond * 200) UnBlink
+        , dataNotSaved DataNotSaved
+        , Time.every (Time.millisecond * 200) UnStored
         ]
 
 
@@ -216,10 +214,16 @@ main =
 port getData : String -> Cmd msg
 
 
-port newData : (List String -> msg) -> Sub msg
+port newData : (String -> msg) -> Sub msg
+
+
+port newError : (String -> msg) -> Sub msg
 
 
 port setData : String -> Cmd msg
 
 
 port dataSaved : (String -> msg) -> Sub msg
+
+
+port dataNotSaved : (String -> msg) -> Sub msg

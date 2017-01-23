@@ -48,7 +48,6 @@ function arrayBufferToBase64( bytes ) {
 }
 
 function joinIvAndData(iv, data) {
-  console.log(iv, data);
   let buf = new Uint8Array(iv.length + data.length);
   iv.forEach((byte, i) => {
     buf[i] = byte;
@@ -67,7 +66,7 @@ function encrypt(passphrase, content) {
   const passphraseKey = encoder.encode(passphrase);
   const data = encoder.encode(content);
 
-  console.log('encrypt', passphrase, content);
+  console.debug('encrypt', passphrase, content);
 
   return generateKey(passphrase, salt)
     .then(encryptionKey => {
@@ -86,7 +85,7 @@ function encrypt(passphrase, content) {
 }
 
 function separateIvFromData(buf) {
-  console.log(buf, buf.length);
+  console.log(buf, buf.length, ivLen);
   var iv = new Uint8Array(ivLen);
   var data = new Uint8Array(buf.length - ivLen);
 
@@ -105,7 +104,11 @@ function separateIvFromData(buf) {
 function decrypt(passphrase, encryptedContent) {
   const passphraseKey = encoder.encode(passphrase);
   const encryptedData = base64ToArrayBuffer(encryptedContent);
-  var parts = separateIvFromData(encryptedData);
+  try {
+    var parts = separateIvFromData(encryptedData);
+  } catch (err) {
+    return Promise.resolve('Reset previously malformed saved pad');
+  }
 
   console.log('decrypt', passphrase, encryptedContent);
 

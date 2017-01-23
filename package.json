@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Hoverpad",
   "scripts": {
+    "build": "elm-make Main.elm --output=hoverpad.js",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "live": "elm-live Main.elm --output=hoverpad.js --open"
   },

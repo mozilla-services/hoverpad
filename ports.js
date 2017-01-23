@@ -1,5 +1,6 @@
 const KEY_PREFIX = "hoverpad";
 var credentials;
+var app = Elm.Main.embed(document.getElementById("root"));
 
 app.ports.getData.subscribe(function(token) {
   // Update global credentials state;
@@ -19,6 +20,7 @@ app.ports.getData.subscribe(function(token) {
         if (chrome.runtime.lastError) {
           console.error('Nothing retrieved', chrome.runtime.lastError);
         }
+        console.log('get', data);
         decryptAndNotify(passphrase, data[key]);
     });
   }
@@ -27,16 +29,16 @@ app.ports.getData.subscribe(function(token) {
 function decryptAndNotify(passphrase, encryptedContent) {
   console.log(email, passphrase, encryptedContent);
   if (!encryptedContent) {
-    app.ports.newData.send(["ok", "New pad"]);
+    app.ports.newData.send("New pad");
     return;
   }
   decrypt(passphrase, encryptedContent)
     .then(content => {
-      app.ports.newData.send(["ok", content]);
+      app.ports.newData.send(content);
     })
     .catch(err => {
       console.error("Error decrypting", err);
-      app.ports.newData.send(["nok", "" + err]);
+      app.ports.newError.send(err.message);
     });
 }
 
@@ -56,25 +58,26 @@ app.ports.setData.subscribe(function(content) {
       .then(encryptedContent => {
         if (typeof chrome == "undefined") {
           localStorage.setItem(key, encryptedContent)
-          app.ports.dataSaved.send("ok");
+          app.ports.dataSaved.send("");
         } else {
           var data = {};
-          data[key] = content;
+          data[key] = encryptedContent;
+          console.log('set', data)
           chrome.storage.local.set(
             data,
             () => {
               if (chrome.runtime.lastError) {
                 console.error('Error saving to chrome.storage', chrome.runtime.lastError);
-                app.ports.dataSaved.send("nok");
+                app.ports.dataNotSaved.send(chrome.runtime.lastError);
                 return;
               }
-              app.ports.dataSaved.send("ok");
+              app.ports.dataSaved.send("");
             });
         }
       })
       .catch(err => {
         console.error('Error encrypting', err);
-        app.ports.dataSaved.send("nok");
+        app.ports.dataNotSaved.send(err.message);
       });
   }, 500);
 });
