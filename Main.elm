@@ -4,6 +4,8 @@ import Time
 import Html
 import Html.Attributes
 import Html.Events
+import Json.Decode
+import Json.Encode
 
 
 -- Model
@@ -35,6 +37,14 @@ type alias Model =
 init : ( Model, Cmd msg )
 init =
     Model True "" "" "" False "" ! []
+
+
+
+-- Handle contenteditable events
+
+
+innerHtmlDecoder =
+    Json.Decode.at [ "target", "innerHTML" ] Json.Decode.string
 
 
 
@@ -138,9 +148,10 @@ padView model =
                     ""
     in
         Html.div [ Html.Attributes.class "pad" ]
-            [ Html.textarea
+            [ Html.div
                 [ Html.Attributes.class storedClass
-                , Html.Events.onInput SetData
+                , Html.Attributes.contenteditable True
+                , Html.Events.on "blur" (Json.Decode.map SetData innerHtmlDecoder)
                 ]
                 [ Html.text model.content ]
             ]

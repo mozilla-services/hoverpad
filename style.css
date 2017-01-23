@@ -33,7 +33,7 @@ body {
   margin: auto;
 }
 
-textarea {	
+div[contenteditable] {
 	border: 0;
 	padding: 20px;
 	padding-top: 50px;
