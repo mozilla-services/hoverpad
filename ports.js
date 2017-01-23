@@ -5,13 +5,13 @@ app.ports.getData.subscribe(function(token) {
   // Update global credentials state;
   credentials = token.split(',', 2);
   console.log(token, credentials);
-  
+
   const email = credentials[0];
   const passphrase = credentials[1];
   const key = KEY_PREFIX + '-' + email;
-  
+
   if (typeof chrome == "undefined") {
-    decryptAndNotify(email, passphrase, localStorage.getItem(key));
+    decryptAndNotify(passphrase, localStorage.getItem(key));
   } else {
     chrome.storage.local.get(
       key,
@@ -19,18 +19,18 @@ app.ports.getData.subscribe(function(token) {
         if (chrome.runtime.lastError) {
           console.error('Nothing retrieved', chrome.runtime.lastError);
         }
-        decryptAndNotify(email, passphrase, data[key]);
+        decryptAndNotify(passphrase, data[key]);
     });
   }
 });
 
-function decryptAndNotify(email, passphrase, encryptedContent) {
+function decryptAndNotify(passphrase, encryptedContent) {
   console.log(email, passphrase, encryptedContent);
   if (!encryptedContent) {
     app.ports.newData.send(["ok", "New pad"]);
     return;
   }
-  decrypt(email, passphrase, encryptedContent)
+  decrypt(passphrase, encryptedContent)
     .then(content => {
       app.ports.newData.send(["ok", content]);
     })
@@ -52,7 +52,7 @@ app.ports.setData.subscribe(function(content) {
 
     console.log(credentials);
 
-    encrypt(email, passphrase, content)
+    encrypt(passphrase, content)
       .then(encryptedContent => {
         if (typeof chrome == "undefined") {
           localStorage.setItem(key, encryptedContent)
