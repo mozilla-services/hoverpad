@@ -23,6 +23,7 @@ type Msg
     | DataNotSaved String
     | UnStored Time.Time
     | BlurSelection
+    | CopySelection
     | ToggleReveal
 
 
@@ -71,6 +72,9 @@ update message model =
 
         BlurSelection ->
             model ! [ blurSelection "" ]
+
+        CopySelection ->
+            model ! [ copySelection "" ]
 
         NewData content ->
             { model | content = content, lock = False } ! []
@@ -158,6 +162,12 @@ controlBar model =
                     "Blur all"
                 else
                     "Reveal all"
+            ]
+        , Html.button
+            [ Html.Attributes.id "copy"
+            , Html.Events.onClick CopySelection
+            ]
+            [ Html.text "Copy selection"
             ]
         ]
 
@@ -278,3 +288,6 @@ port input : (String -> msg) -> Sub msg
 
 
 port blurSelection : String -> Cmd msg
+
+
+port copySelection : String -> Cmd msg

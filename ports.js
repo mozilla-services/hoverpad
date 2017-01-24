@@ -112,3 +112,8 @@ app.ports.blurSelection.subscribe(function(content) {
   console.log('Blur');
   document.execCommand("bold", false, null);
 });
+
+app.ports.copySelection.subscribe(function(content) {
+  console.log('Copy');
+  document.execCommand("copy", false, null);
+});
