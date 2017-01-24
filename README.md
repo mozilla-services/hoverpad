@@ -62,3 +62,16 @@ Grab it from the Chrome Store: https://chrome.google.com/webstore/detail/hoverpa
 1. Go to ``chrome://extensions``
 2. Tick the Developer Mode
 3. Load the hoverpad repository folder.
+
+## Desktop app
+
+Using [Electron](http://electron.atom.io/), you can run the hoverpad as an
+application on your desktop.
+
+First install electron:
+
+    npm install -g electron
+
+Then run the application:
+
+    electron electron.js
