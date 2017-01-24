@@ -22,6 +22,7 @@ type Msg
     | DataSaved String
     | DataNotSaved String
     | UnStored Time.Time
+    | BlurSelection
 
 
 type alias Model =
@@ -65,6 +66,9 @@ update message model =
 
         GetData ->
             { model | error = "" } ! [ getData (model.email ++ "," ++ model.passphrase) ]
+
+        BlurSelection ->
+            model ! [ blurSelection "" ]
 
         NewData content ->
             { model | content = content, lock = False } ! []
@@ -130,6 +134,15 @@ formView model =
         ]
 
 
+controlBar : Model -> Html.Html Msg
+controlBar mode =
+    Html.div
+        [ Html.Attributes.class "control-bar"
+        , Html.Events.onClick BlurSelection
+        ]
+        [ Html.button [ Html.Attributes.id "sel" ] [ Html.text "Blur selection" ] ]
+
+
 padView : Model -> Html.Html Msg
 padView model =
     Html.div
@@ -139,7 +152,8 @@ padView model =
             else
                 "pad"
         ]
-        [ Html.div
+        [ controlBar model
+        , Html.div
             [ Html.Attributes.class <|
                 if model.stored then
                     "stored"
@@ -234,3 +248,6 @@ port dataNotSaved : (String -> msg) -> Sub msg
 
 
 port input : (String -> msg) -> Sub msg
+
+
+port blurSelection : String -> Cmd msg

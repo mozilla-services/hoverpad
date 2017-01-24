@@ -36,7 +36,7 @@ body {
 div[contenteditable] {
 	border: 0;
 	padding: 20px;
-	padding-top: 50px;
+	padding-top: 90px;
 	border-radius: 3px;
 	font-family: sans-serif;
 	font-size: 14px;
@@ -147,13 +147,8 @@ span {
 	font-size: 16px;	
 }
 
-#connect {
-	position: absolute;
-	bottom: 20px;
-	right: 20px;
-	color: #bbb;
-	z-index: 10;
-	text-decoration: none;
-	font-size: 16px;
-	display: none;
-}`
+#sel {
+    position: absolute;
+    top: 50px;
+    left: 20px;
+}

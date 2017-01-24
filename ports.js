@@ -107,3 +107,8 @@ app.ports.setData.subscribe(function(content) {
       app.ports.dataNotSaved.send(err.message);
     });
 });
+
+app.ports.blurSelection.subscribe(function(content) {
+  console.log('Blur');
+  document.execCommand("bold", false, null);
+});
