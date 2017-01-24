@@ -51,6 +51,10 @@ div[contenteditable] b {
 	filter: blur(4px);
 }
 
+div[contenteditable].reveal b {
+	filter: none;
+}
+
 .stored {
     background: lightgreen;
 }
@@ -147,7 +151,7 @@ span {
 	font-size: 16px;	
 }
 
-#sel {
+.control-bar {
     position: absolute;
     top: 50px;
     left: 20px;

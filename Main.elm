@@ -23,6 +23,7 @@ type Msg
     | DataNotSaved String
     | UnStored Time.Time
     | BlurSelection
+    | ToggleReveal
 
 
 type alias Model =
@@ -32,12 +33,13 @@ type alias Model =
     , content : String
     , stored : Bool
     , error : String
+    , reveal : Bool
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" False "" ! []
+    Model True "" "" "" False "" False ! []
 
 
 
@@ -88,6 +90,9 @@ update message model =
         DataNotSaved error ->
             { model | error = (Debug.log "" error) } ! []
 
+        ToggleReveal ->
+            { model | reveal = not model.reveal } ! []
+
 
 
 -- View
@@ -135,12 +140,26 @@ formView model =
 
 
 controlBar : Model -> Html.Html Msg
-controlBar mode =
+controlBar model =
     Html.div
         [ Html.Attributes.class "control-bar"
-        , Html.Events.onClick BlurSelection
         ]
-        [ Html.button [ Html.Attributes.id "sel" ] [ Html.text "Blur selection" ] ]
+        [ Html.button
+            [ Html.Attributes.id "sel"
+            , Html.Events.onClick BlurSelection
+            ]
+            [ Html.text "Blur selection" ]
+        , Html.button
+            [ Html.Attributes.id "toggle-all"
+            , Html.Events.onClick ToggleReveal
+            ]
+            [ Html.text <|
+                if model.reveal then
+                    "Blur all"
+                else
+                    "Reveal all"
+            ]
+        ]
 
 
 padView : Model -> Html.Html Msg
@@ -155,10 +174,18 @@ padView model =
         [ controlBar model
         , Html.div
             [ Html.Attributes.class <|
-                if model.stored then
-                    "stored"
-                else
-                    ""
+                case ( model.stored, model.reveal ) of
+                    ( True, True ) ->
+                        "stored reveal"
+
+                    ( True, False ) ->
+                        "stored"
+
+                    ( False, True ) ->
+                        "reveal"
+
+                    ( _, _ ) ->
+                        ""
             , Html.Attributes.contenteditable True
             , Html.Attributes.property "innerHTML" (Json.Encode.string model.content)
             ]
