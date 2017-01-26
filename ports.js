@@ -48,7 +48,7 @@ app.ports.getData.subscribe(function(token) {
   if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
     decryptAndNotify(passphrase, localStorage.getItem(key));
   } else {
-    chrome.storage.sync.get(
+    chrome.storage.local.get(
       key,
       data => {
         if (chrome.runtime.lastError) {
@@ -90,7 +90,7 @@ app.ports.setData.subscribe(function(content) {
         var data = {};
         data[key] = encryptedContent;
         console.log('set', data)
-        chrome.storage.sync.set(
+        chrome.storage.local.set(
           data,
           () => {
             if (chrome.runtime.lastError) {
