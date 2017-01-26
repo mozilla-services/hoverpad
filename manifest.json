@@ -11,14 +11,14 @@
 
   "permissions": [
     "storage"
-  ], 
+  ],
 
   "browser_action": {
     "default_icon": {
      "32" : "icons/hoverpad-32.png"
     },
     "default_title": "Hoverpad",
-    "default_popup": "popup/hoverpad.html"
+    "default_popup": "index.html"
   },
   "applications": {
     "gecko": {

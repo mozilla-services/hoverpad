@@ -1,0 +1,24 @@
+{
+  "name": "Hoverpad",
+  "version": "1.0.0",
+  "description": "Hoverpad",
+  "scripts": {
+    "build": "elm-make Main.elm --output=hoverpad.js",
+    "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
+    "live": "elm-live Main.elm --output=hoverpad.js --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mozilla-services/hoverpad.git"
+  },
+  "author": "Storage team",
+  "license": "MPL",
+  "bugs": {
+    "url": "https://github.com/mozilla-services/hoverpad/issues"
+  },
+  "homepage": "https://github.com/mozilla-services/hoverpad#readme",
+  "devDependencies": {
+    "elm": "^0.18.0",
+    "elm-live": "^2.6.1"
+  }
+}

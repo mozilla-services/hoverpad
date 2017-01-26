@@ -3,21 +3,24 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="hoverpad.css"/>
+    <link rel="stylesheet" href="style.css"/>
   </head>
 
-<body>
-    <div class="outer-wrapper">
+  <body>
+      <div class="outer-wrapper hidden">
         <h1>Universal Notepad</h1>
         <a id="lock" href="#">Lock</a>
         <div class="pad">
-            <textarea></textarea>
+          <textarea></textarea>
         </div>
         <span>Available everywhere you're signed in to Firefox</span>
         <a id="connect" href="#">Connect a device</a>
-    </div>
+      </div>
 
-  <script src="hoverpad.js"></script>
-</body>
+    <div id="root"></div>
 
+    <script src="hoverpad.js"></script>
+    <script src="encryption.js"></script>
+    <script src="ports.js"></script>
+  </body>
 </html>
