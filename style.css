@@ -7,14 +7,14 @@
 html {
   font-family: sans-serif;
   font-size: 10px;
-  background: #000;
+  background: #fff;
   height: 500px;
   margin: 0;
 }
 
 body {
   width: 750px;
-  background: #000;
+  background: #fff;
   margin: 0 auto;
   height: inherit;
 }
