@@ -6,7 +6,7 @@ A persistent pad — click a button in your browser and add some notes,
 which will persist even after browser restarts and be synced between
 your browsers.
 
-Works in Firefox 47+, and will also work as a Chrome extension, out of
+Works in Firefox 53+, and will also work as a Chrome extension, out of
 the box.
 
 ## What it does
@@ -24,15 +24,9 @@ to persist the notes.
 
 * How to persist data in a WebExtension using the Storage Sync API.
 
-## How to try the addon?
+## How to try the addon in Firefox?
 
-### Activate the storage.sync API.
-
-1. Go to `about:config`
-2. Search for webextensions
-3. Change `webextensions.storage.sync.serverURL` with `https://webextensions.settings.services.mozilla.com/v1`
-4. Switch `webextensions.storage.sync.enabled` to `true`
-5. Make sure Firefox Sync is configured in your computer and the preferences checkbox is checked.
+**You will need Firefox Beta or Firefox Nightly to use this addons.**
 
 ### From addons.mozilla.org
 
@@ -53,3 +47,16 @@ If you don't care about automatic updates, you can also install the latest XPI f
 3. Select the manifest.json
 4. You would need to do that each time you restart Firefox.
 5. You can click on the `Refresh` button to change the files and reload the add-on.
+
+## How to try the addon in Chrome?
+
+
+### From the Chrome Store
+
+Grab it from the Chrome Store: https://chrome.google.com/webstore/detail/hoverpad/kedanmokpljgpkgfojeoigehigpoljie
+
+### From the source code
+
+1. Go to ``chrome://extensions``
+2. Tick the Developer Mode
+3. Load the hoverpad repository folder.
