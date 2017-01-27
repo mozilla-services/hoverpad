@@ -9,6 +9,8 @@ your browsers.
 Works in Firefox 53+, and will also work as a Chrome extension, out of
 the box.
 
+Try out [the demo](https://mozilla-services.github.io/hoverpad/)
+
 ## What it does
 
 This extension includes:
