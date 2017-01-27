@@ -1,6 +1,13 @@
 const KEY_PREFIX = "hoverpad";
 var credentials;
-var app = Elm.Main.fullscreen();
+var app;
+if (typeof(Elm) === "undefined") {
+  // This happens if we're in the context of Electron.
+  const Elm = require('./hoverpad.js');
+  app = Elm.Main.fullscreen();
+} else {
+  app = Elm.Main.fullscreen();
+}
 
 function placeCaretAtEnd(el) {
   return function() {

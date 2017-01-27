@@ -7,6 +7,7 @@
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
     "fx-web-ext": "web-ext build",
+    "electron": "electron electron.js",
     "publish-to-gh-pages": "mkdir -p dist && cp -r index.html *.js *.css icons dist && gh-pages --dist ./dist"
   },
   "repository": {
@@ -23,6 +24,7 @@
     "elm": "^0.18.0",
     "elm-live": "^2.6.1",
     "web-ext": "^1.7.0",
-    "gh-pages": "^0.11.0"
+    "gh-pages": "^0.11.0",
+    "electron": "1.4.15"
   }
 }
