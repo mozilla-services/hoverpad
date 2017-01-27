@@ -6,7 +6,8 @@
     "build": "elm-make Main.elm --output=hoverpad.js",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
-    "fx-web-ext": "web-ext build"
+    "fx-web-ext": "web-ext build",
+    "publish-to-gh-pages": "mkdir -p dist && cp -r index.html *.js *.css icons dist && gh-pages --dist ./dist"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "elm": "^0.18.0",
     "elm-live": "^2.6.1",
-    "web-ext": "^1.7.0"
+    "web-ext": "^1.7.0",
+    "gh-pages": "^0.11.0"
   }
 }
