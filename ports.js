@@ -1,6 +1,6 @@
 const KEY_PREFIX = "hoverpad";
 var credentials;
-var app = Elm.Main.embed(document.getElementById("root"));
+var app = Elm.Main.fullscreen();
 
 function placeCaretAtEnd(el) {
   return function() {

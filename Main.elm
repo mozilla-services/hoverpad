@@ -104,14 +104,16 @@ update message model =
 
 formView : Model -> Html.Html Msg
 formView model =
-    Html.div
+    Html.form
         [ Html.Attributes.class <|
             if model.lock then
-                "form"
+                ""
             else
                 "hidden"
+        , Html.Events.onSubmit GetData
         ]
-        [ Html.div []
+        [ Html.div [ Html.Attributes.class "spacer" ] []
+        , Html.div []
             [ Html.text model.error ]
         , Html.div []
             [ Html.label [ Html.Attributes.for "email" ] [ Html.text "Email" ]
@@ -137,9 +139,10 @@ formView model =
             ]
         , Html.div []
             [ Html.button
-                [ Html.Events.onClick GetData ]
+                []
                 [ Html.text "Login and unlock" ]
             ]
+        , Html.div [ Html.Attributes.class "spacer" ] []
         ]
 
 
@@ -215,21 +218,23 @@ view model =
                     model.email
     in
         Html.div [ Html.Attributes.class "outer-wrapper" ]
-            [ Html.h1 [] [ Html.text title ]
-            , Html.a
-                [ Html.Attributes.id "lock"
-                , Html.Attributes.href "#"
-                , Html.Attributes.class <|
-                    if model.lock then
-                        "hidden"
-                    else
-                        ""
-                , Html.Events.onClick Lock
+            [ Html.header []
+                [ Html.h1 [] [ Html.text title ]
+                , Html.a
+                    [ Html.Attributes.id "lock"
+                    , Html.Attributes.href "#"
+                    , Html.Attributes.class <|
+                        if model.lock then
+                            "hidden"
+                        else
+                            ""
+                    , Html.Events.onClick Lock
+                    ]
+                    [ Html.text "Lock" ]
                 ]
-                [ Html.text "Lock" ]
             , formView model
             , padView model
-            , Html.span [] [ Html.text "Available everywhere with your Email and Passphrase!" ]
+            , Html.footer [] [ Html.text "Available everywhere with your Email and Passphrase!" ]
             ]
 
 
