@@ -75,3 +75,20 @@ First install electron:
 Then run the application:
 
     electron electron.js
+
+
+## Mobile app
+
+Using [Cordova](), you can run the hoverpad as an application on your mobile.
+
+First install cordova:
+
+    npm install -g cordova
+
+Then add the platform(s) you'd like to support:
+
+    cordova platform add android
+
+Then run the application (here on android):
+
+    npm run cordova-android
