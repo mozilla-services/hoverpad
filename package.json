@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Hoverpad",
   "scripts": {
-    "build": "elm-make Main.elm --output=build/hoverpad.js && cp encryption.js manifest.json ports.js style.css index.html build/",
+    "build": "rm -fr build/ web-ext-artifacts/ && elm-make Main.elm --output=build/hoverpad.js && cp encryption.js manifest.json ports.js style.css index.html build/",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
-    "fx-web-ext": "npm run build && web-ext build -s build",
+    "fx-web-ext": "npm run build && web-ext build -s build && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
     "publish-to-gh-pages": "mkdir -p dist && cp -r index.html *.js *.css icons dist && gh-pages --dist ./dist"
   },
