@@ -8,7 +8,10 @@
     "live": "elm-live Main.elm --output=hoverpad.js --open",
     "fx-web-ext": "npm run build && web-ext build -s build && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
-    "publish-to-gh-pages": "mkdir -p dist && cp -r index.html *.js *.css icons dist && gh-pages --dist ./dist"
+    "publish-to-gh-pages": "mkdir -p dist && cp -r index.html *.js *.css icons dist && gh-pages --dist ./dist",
+    "build-cordova": "cp encryption.js hoverpad.js index.html ports.js style.css www",
+    "cordova-emulate-android": "npm run build-cordova && cordova emulate android",
+    "cordova-android": "npm run build-cordova && cordova run android"
   },
   "repository": {
     "type": "git",
@@ -25,6 +28,7 @@
     "elm-live": "^2.6.1",
     "web-ext": "^1.7.0",
     "gh-pages": "^0.11.0",
-    "electron": "1.4.15"
+    "electron": "1.4.15",
+    "cordova": "^6.5.0"
   }
 }
