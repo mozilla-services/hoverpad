@@ -2,30 +2,25 @@ const ivLen = 16;
 const salt = '9i0+apMFBsbXMU9Kfai2Cw==';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+var subtle;
+if (typeof(crypto.subtle) === "undefined") {
+  subtle = crypto.webkitSubtle;
+} else {
+  subtle = crypto.subtle;
+}
 
 /* Generate a key from a passphrase */
 function generateKey(passphrase, appWiseSalt) {
-  const passphraseKey = encoder.encode(passphrase);
+  const passphraseKey = encoder.encode(md5(passphrase));
   const salt = encoder.encode(atob(appWiseSalt));
 
-  return crypto.subtle.importKey(
+  return subtle.importKey(
     'raw',
     passphraseKey,
-    'PBKDF2',
+    'AES-CBC',
     false,
-    ['deriveKey']
-  ).then(key => {
-    return crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: salt,
-        iterations: 1000,
-        'hash': 'sha-256'},
-      key,
-      {name: 'AES-GCM', 'length': 256},
-      true,
-      ['encrypt', 'decrypt']);
-  });
+    ['encrypt', 'decrypt']
+  );
 }
 
 function base64ToArrayBuffer(base64) {
@@ -70,8 +65,8 @@ function encrypt(passphrase, content) {
 
   return generateKey(passphrase, salt)
     .then(encryptionKey => {
-      return crypto.subtle.encrypt(
-        {name: 'AES-GCM',
+      return subtle.encrypt(
+        {name: 'AES-CBC',
          iv: initVector},
         encryptionKey,
         data);
@@ -114,8 +109,8 @@ function decrypt(passphrase, encryptedContent) {
 
   return generateKey(passphrase, salt)
     .then(decryptionKey => {
-      return crypto.subtle.decrypt(
-        {name: 'AES-GCM',
+      return subtle.decrypt(
+        {name: 'AES-CBC',
          iv: parts.iv},
         decryptionKey,
         parts.data)
