@@ -6,6 +6,7 @@ import Html.Attributes
 import Html.Events
 import Json.Decode
 import Json.Encode
+import Task
 
 
 -- Model
@@ -14,17 +15,18 @@ import Json.Encode
 type Msg
     = NewEmail String
     | NewPassphrase String
-    | NewData String
+    | NewData (Maybe String)
+    | UpdateContent String
     | NewError String
     | GetData
     | Lock
-    | SetData String
     | DataSaved String
     | DataNotSaved String
-    | UnStored Time.Time
+    | Modifying Time.Time
     | BlurSelection
     | CopySelection
     | ToggleReveal
+    | LastModified Time.Time
 
 
 type alias Model =
@@ -32,34 +34,46 @@ type alias Model =
     , email : String
     , passphrase : String
     , content : String
-    , stored : Bool
+    , loadedContent :
+        -- may be desynchronized with "content", only used to redraw the
+        -- contentEditable with new decrypted content
+        String
+    , modified : Bool
     , error : String
     , reveal : Bool
+    , lastModified : Maybe Time.Time
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" False "" False ! []
-
-
-
--- Handle contenteditable events
-
-
-innerHtmlDecoder =
-    Json.Decode.at [ "target", "innerHtml" ] Json.Decode.string
+    Model True "" "" "" "" False "" False Nothing ! []
 
 
 
 -- Update
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        UnStored time ->
-            { model | stored = False } ! []
+        Modifying now ->
+            -- The content is being edited, should we save? (aka debounce)
+            let
+                lastModified =
+                    Maybe.withDefault 0 model.lastModified
+
+                elapsed =
+                    Debug.log "Elapsed" <| now - lastModified
+
+                commands =
+                    if elapsed > 1000 then
+                        -- No modification since 1 second? Save
+                        [ setData model.content ]
+                    else
+                        []
+            in
+                model ! commands
 
         NewEmail email ->
             { model | email = email } ! []
@@ -68,7 +82,7 @@ update message model =
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            { model | error = "" } ! [ getData (model.email ++ "," ++ model.passphrase) ]
+            { model | error = "" } ! [ getData { email = model.email, passphrase = model.passphrase } ]
 
         BlurSelection ->
             model ! [ blurSelection "" ]
@@ -76,26 +90,40 @@ update message model =
         CopySelection ->
             model ! [ copySelection "" ]
 
-        NewData content ->
-            { model | content = content, lock = False } ! []
+        NewData data ->
+            { model
+                | loadedContent = Maybe.withDefault "Edit here" (Debug.log "new data" data)
+                , modified = False
+                , lock = False
+                , lastModified = Nothing
+            }
+                ! []
+
+        UpdateContent content ->
+            let
+                _ =
+                    Debug.log "updated content" content
+            in
+                { model | content = content, modified = True, lock = False }
+                    ! [ Task.perform LastModified Time.now ]
 
         NewError error ->
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
 
         Lock ->
-            { model | lock = True, content = "", passphrase = "" } ! []
-
-        SetData content ->
-            { model | content = content } ! [ setData content ]
+            { model | lock = True, content = "", passphrase = "" } ! [ setData model.content ]
 
         DataSaved _ ->
-            { model | stored = True } ! []
+            { model | modified = False, lastModified = Nothing } ! []
 
         DataNotSaved error ->
             { model | error = (Debug.log "" error) } ! []
 
         ToggleReveal ->
             { model | reveal = not model.reveal } ! []
+
+        LastModified time ->
+            { model | lastModified = Just time } ! []
 
 
 
@@ -172,6 +200,14 @@ controlBar model =
             ]
             [ Html.text "Copy selection"
             ]
+        , Html.p
+            []
+            [ Html.text <|
+                if model.modified then
+                    "Modified"
+                else
+                    "Saved"
+            ]
         ]
 
 
@@ -185,25 +221,27 @@ padView model =
                 "pad"
         ]
         [ controlBar model
-        , Html.div
-            [ Html.Attributes.class <|
-                case ( model.stored, model.reveal ) of
-                    ( True, True ) ->
-                        "stored reveal"
-
-                    ( True, False ) ->
-                        "stored"
-
-                    ( False, True ) ->
-                        "reveal"
-
-                    ( _, _ ) ->
-                        ""
-            , Html.Attributes.contenteditable True
-            , Html.Attributes.property "innerHTML" (Json.Encode.string model.content)
-            ]
-            []
+        , contentEditable model
         ]
+
+
+innerHtmlDecoder =
+    Json.Decode.at [ "target", "innerHTML" ] Json.Decode.string
+
+
+contentEditable : Model -> Html.Html Msg
+contentEditable model =
+    Html.div
+        [ Html.Attributes.class <|
+            if model.reveal then
+                "reveal"
+            else
+                ""
+        , Html.Attributes.contenteditable True
+        , Html.Events.on "input" (Json.Decode.map UpdateContent innerHtmlDecoder)
+        , Html.Attributes.property "innerHTML" (Json.Encode.string model.loadedContent)
+        ]
+        []
 
 
 view : Model -> Html.Html Msg
@@ -244,14 +282,18 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ newData NewData
-        , newError NewError
-        , dataSaved DataSaved
-        , dataNotSaved DataNotSaved
-        , input SetData
-        , Time.every (Time.millisecond * 200) UnStored
-        ]
+    let
+        subs =
+            [ newData NewData
+            , newError NewError
+            , dataSaved DataSaved
+            , dataNotSaved DataNotSaved
+            ]
+    in
+        if model.modified then
+            Sub.batch (subs ++ [ Time.every (Time.millisecond * 200) Modifying ])
+        else
+            Sub.batch subs
 
 
 
@@ -271,10 +313,10 @@ main =
 -- Ports
 
 
-port getData : String -> Cmd msg
+port getData : { email : String, passphrase : String } -> Cmd msg
 
 
-port newData : (String -> msg) -> Sub msg
+port newData : (Maybe String -> msg) -> Sub msg
 
 
 port newError : (String -> msg) -> Sub msg
@@ -287,9 +329,6 @@ port dataSaved : (String -> msg) -> Sub msg
 
 
 port dataNotSaved : (String -> msg) -> Sub msg
-
-
-port input : (String -> msg) -> Sub msg
 
 
 port blurSelection : String -> Cmd msg

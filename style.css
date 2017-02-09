@@ -46,10 +46,6 @@ div[contenteditable].reveal b {
   filter: none;
 }
 
-.stored {
-  background: lightgreen;
-}
-
 .hidden {
   display: none;
 }
@@ -128,7 +124,17 @@ footer {
   padding: 20px;
 }
 
+.control-bar {
+  display: flex;
+  flex-flow: row;
+}
+
 .control-bar button {
   flex: none;
   margin-right: 5px;
+}
+
+.control-bar p {
+  flex: auto;
+  text-align: right;
 }
