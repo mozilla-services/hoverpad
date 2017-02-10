@@ -6,13 +6,17 @@ import Html.Attributes
 import Html.Events
 import Json.Decode
 import Json.Encode
+import Process
 import Task
 
 
 -- Model
 
 
-type Msg
+type
+    Msg
+    -- Load stored data: GetData -> NewData
+    -- then on user input: UpdateContent -> Debounce (via TimeOut) -> setData -> DataSaved
     = NewEmail String
     | NewPassphrase String
     | NewData (Maybe String)
@@ -22,11 +26,11 @@ type Msg
     | Lock
     | DataSaved String
     | DataNotSaved String
-    | Modifying Time.Time
     | BlurSelection
     | CopySelection
     | ToggleReveal
-    | LastModified Time.Time
+      -- Used to debounce (see debounceCount)
+    | TimeOut Int
 
 
 type alias Model =
@@ -36,18 +40,22 @@ type alias Model =
     , content : String
     , loadedContent :
         -- may be desynchronized with "content", only used to redraw the
-        -- contentEditable with new decrypted content
+        -- contentEditable with some new stored/decrypted content
         String
     , modified : Bool
     , error : String
     , reveal : Bool
-    , lastModified : Maybe Time.Time
+    , debounceCount :
+        -- Debounce: each time a user input is detected, start a
+        -- "Process.sleep" with a "debounceCount". Once we received the last
+        -- one, we act on it.
+        Int
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" "" False "" False Nothing ! []
+    Model True "" "" "" "" False "" False 0 ! []
 
 
 
@@ -57,24 +65,6 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        Modifying now ->
-            -- The content is being edited, should we save? (aka debounce)
-            let
-                lastModified =
-                    Maybe.withDefault 0 model.lastModified
-
-                elapsed =
-                    Debug.log "Elapsed" <| now - lastModified
-
-                commands =
-                    if elapsed > 1000 then
-                        -- No modification since 1 second? Save
-                        [ setData model.content ]
-                    else
-                        []
-            in
-                model ! commands
-
         NewEmail email ->
             { model | email = email } ! []
 
@@ -95,7 +85,6 @@ update message model =
                 | loadedContent = Maybe.withDefault "Edit here" (Debug.log "new data" data)
                 , modified = False
                 , lock = False
-                , lastModified = Nothing
             }
                 ! []
 
@@ -103,9 +92,17 @@ update message model =
             let
                 _ =
                     Debug.log "updated content" content
+
+                debounceCount =
+                    model.debounceCount + 1
             in
-                { model | content = content, modified = True, lock = False }
-                    ! [ Task.perform LastModified Time.now ]
+                { model
+                    | content = content
+                    , modified = True
+                    , debounceCount = debounceCount
+                    , lock = False
+                }
+                    ! [ Process.sleep Time.second |> Task.perform (always (TimeOut debounceCount)) ]
 
         NewError error ->
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
@@ -114,7 +111,7 @@ update message model =
             { model | lock = True, content = "", passphrase = "" } ! [ setData model.content ]
 
         DataSaved _ ->
-            { model | modified = False, lastModified = Nothing } ! []
+            { model | modified = False } ! []
 
         DataNotSaved error ->
             { model | error = (Debug.log "" error) } ! []
@@ -122,8 +119,11 @@ update message model =
         ToggleReveal ->
             { model | reveal = not model.reveal } ! []
 
-        LastModified time ->
-            { model | lastModified = Just time } ! []
+        TimeOut debounceCount ->
+            if debounceCount == model.debounceCount then
+                { model | debounceCount = 0 } ! [ setData model.content ]
+            else
+                model ! []
 
 
 
@@ -282,18 +282,12 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    let
-        subs =
-            [ newData NewData
-            , newError NewError
-            , dataSaved DataSaved
-            , dataNotSaved DataNotSaved
-            ]
-    in
-        if model.modified then
-            Sub.batch (subs ++ [ Time.every (Time.millisecond * 200) Modifying ])
-        else
-            Sub.batch subs
+    Sub.batch
+        [ newData NewData
+        , newError NewError
+        , dataSaved DataSaved
+        , dataNotSaved DataNotSaved
+        ]
 
 
 
