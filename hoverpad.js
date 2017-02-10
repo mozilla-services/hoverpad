@@ -6138,6 +6138,10 @@ var _elm_lang$core$Json_Decode$bool = _elm_lang$core$Native_Json.decodePrimitive
 var _elm_lang$core$Json_Decode$string = _elm_lang$core$Native_Json.decodePrimitive('string');
 var _elm_lang$core$Json_Decode$Decoder = {ctor: 'Decoder'};
 
+var _elm_lang$core$Process$kill = _elm_lang$core$Native_Scheduler.kill;
+var _elm_lang$core$Process$sleep = _elm_lang$core$Native_Scheduler.sleep;
+var _elm_lang$core$Process$spawn = _elm_lang$core$Native_Scheduler.spawn;
+
 var _elm_lang$core$Tuple$mapSecond = F2(
 	function (func, _p0) {
 		var _p1 = _p0;
@@ -12676,28 +12680,19 @@ var _mozilla_services$hoverpad$Main$copySelection = _elm_lang$core$Native_Platfo
 	});
 var _mozilla_services$hoverpad$Main$Model = F9(
 	function (a, b, c, d, e, f, g, h, i) {
-		return {lock: a, email: b, passphrase: c, content: d, loadedContent: e, modified: f, error: g, reveal: h, lastModified: i};
+		return {lock: a, email: b, passphrase: c, content: d, loadedContent: e, modified: f, error: g, reveal: h, debounceCount: i};
 	});
 var _mozilla_services$hoverpad$Main$init = A2(
 	_elm_lang$core$Platform_Cmd_ops['!'],
-	A9(_mozilla_services$hoverpad$Main$Model, true, '', '', '', '', false, '', false, _elm_lang$core$Maybe$Nothing),
+	A9(_mozilla_services$hoverpad$Main$Model, true, '', '', '', '', false, '', false, 0),
 	{ctor: '[]'});
-var _mozilla_services$hoverpad$Main$LastModified = function (a) {
-	return {ctor: 'LastModified', _0: a};
+var _mozilla_services$hoverpad$Main$TimeOut = function (a) {
+	return {ctor: 'TimeOut', _0: a};
 };
 var _mozilla_services$hoverpad$Main$update = F2(
 	function (message, model) {
 		var _p0 = message;
 		switch (_p0.ctor) {
-			case 'Modifying':
-				var lastModified = A2(_elm_lang$core$Maybe$withDefault, 0, model.lastModified);
-				var elapsed = A2(_elm_lang$core$Debug$log, 'Elapsed', _p0._0 - lastModified);
-				var commands = (_elm_lang$core$Native_Utils.cmp(elapsed, 1000) > 0) ? {
-					ctor: '::',
-					_0: _mozilla_services$hoverpad$Main$setData(model.content),
-					_1: {ctor: '[]'}
-				} : {ctor: '[]'};
-				return A2(_elm_lang$core$Platform_Cmd_ops['!'], model, commands);
 			case 'NewEmail':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -12753,21 +12748,25 @@ var _mozilla_services$hoverpad$Main$update = F2(
 								'Edit here',
 								A2(_elm_lang$core$Debug$log, 'new data', _p0._0)),
 							modified: false,
-							lock: false,
-							lastModified: _elm_lang$core$Maybe$Nothing
+							lock: false
 						}),
 					{ctor: '[]'});
 			case 'UpdateContent':
 				var _p2 = _p0._0;
+				var debounceCount = model.debounceCount + 1;
 				var _p1 = A2(_elm_lang$core$Debug$log, 'updated content', _p2);
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{content: _p2, modified: true, lock: false}),
+						{content: _p2, modified: true, debounceCount: debounceCount, lock: false}),
 					{
 						ctor: '::',
-						_0: A2(_elm_lang$core$Task$perform, _mozilla_services$hoverpad$Main$LastModified, _elm_lang$core$Time$now),
+						_0: A2(
+							_elm_lang$core$Task$perform,
+							_elm_lang$core$Basics$always(
+								_mozilla_services$hoverpad$Main$TimeOut(debounceCount)),
+							_elm_lang$core$Process$sleep(_elm_lang$core$Time$second)),
 						_1: {ctor: '[]'}
 					});
 			case 'NewError':
@@ -12793,7 +12792,7 @@ var _mozilla_services$hoverpad$Main$update = F2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{modified: false, lastModified: _elm_lang$core$Maybe$Nothing}),
+						{modified: false}),
 					{ctor: '[]'});
 			case 'DataNotSaved':
 				return A2(
@@ -12812,13 +12811,18 @@ var _mozilla_services$hoverpad$Main$update = F2(
 						{reveal: !model.reveal}),
 					{ctor: '[]'});
 			default:
-				return A2(
+				return _elm_lang$core$Native_Utils.eq(_p0._0, model.debounceCount) ? A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{
-							lastModified: _elm_lang$core$Maybe$Just(_p0._0)
-						}),
+						{debounceCount: 0}),
+					{
+						ctor: '::',
+						_0: _mozilla_services$hoverpad$Main$setData(model.content),
+						_1: {ctor: '[]'}
+					}) : A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
 					{ctor: '[]'});
 		}
 	});
@@ -12905,9 +12909,6 @@ var _mozilla_services$hoverpad$Main$controlBar = function (model) {
 			}
 		});
 };
-var _mozilla_services$hoverpad$Main$Modifying = function (a) {
-	return {ctor: 'Modifying', _0: a};
-};
 var _mozilla_services$hoverpad$Main$DataNotSaved = function (a) {
 	return {ctor: 'DataNotSaved', _0: a};
 };
@@ -12974,32 +12975,24 @@ var _mozilla_services$hoverpad$Main$NewData = function (a) {
 	return {ctor: 'NewData', _0: a};
 };
 var _mozilla_services$hoverpad$Main$subscriptions = function (model) {
-	var subs = {
-		ctor: '::',
-		_0: _mozilla_services$hoverpad$Main$newData(_mozilla_services$hoverpad$Main$NewData),
-		_1: {
+	return _elm_lang$core$Platform_Sub$batch(
+		{
 			ctor: '::',
-			_0: _mozilla_services$hoverpad$Main$newError(_mozilla_services$hoverpad$Main$NewError),
+			_0: _mozilla_services$hoverpad$Main$newData(_mozilla_services$hoverpad$Main$NewData),
 			_1: {
 				ctor: '::',
-				_0: _mozilla_services$hoverpad$Main$dataSaved(_mozilla_services$hoverpad$Main$DataSaved),
+				_0: _mozilla_services$hoverpad$Main$newError(_mozilla_services$hoverpad$Main$NewError),
 				_1: {
 					ctor: '::',
-					_0: _mozilla_services$hoverpad$Main$dataNotSaved(_mozilla_services$hoverpad$Main$DataNotSaved),
-					_1: {ctor: '[]'}
+					_0: _mozilla_services$hoverpad$Main$dataSaved(_mozilla_services$hoverpad$Main$DataSaved),
+					_1: {
+						ctor: '::',
+						_0: _mozilla_services$hoverpad$Main$dataNotSaved(_mozilla_services$hoverpad$Main$DataNotSaved),
+						_1: {ctor: '[]'}
+					}
 				}
 			}
-		}
-	};
-	return model.modified ? _elm_lang$core$Platform_Sub$batch(
-		A2(
-			_elm_lang$core$Basics_ops['++'],
-			subs,
-			{
-				ctor: '::',
-				_0: A2(_elm_lang$core$Time$every, _elm_lang$core$Time$millisecond * 200, _mozilla_services$hoverpad$Main$Modifying),
-				_1: {ctor: '[]'}
-			})) : _elm_lang$core$Platform_Sub$batch(subs);
+		});
 };
 var _mozilla_services$hoverpad$Main$NewPassphrase = function (a) {
 	return {ctor: 'NewPassphrase', _0: a};
@@ -13260,7 +13253,7 @@ var _mozilla_services$hoverpad$Main$main = _elm_lang$html$Html$program(
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
 if (typeof _mozilla_services$hoverpad$Main$main !== 'undefined') {
-    _mozilla_services$hoverpad$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Main.Msg":{"args":[],"tags":{"CopySelection":[],"UpdateContent":["String"],"DataNotSaved":["String"],"ToggleReveal":[],"GetData":[],"BlurSelection":[],"NewData":["Maybe.Maybe String"],"NewError":["String"],"DataSaved":["String"],"NewPassphrase":["String"],"NewEmail":["String"],"Modifying":["Time.Time"],"Lock":[],"LastModified":["Time.Time"]}}},"aliases":{"Time.Time":{"args":[],"type":"Float"}},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
+    _mozilla_services$hoverpad$Main$main(Elm['Main'], 'Main', {"types":{"unions":{"Maybe.Maybe":{"args":["a"],"tags":{"Just":["a"],"Nothing":[]}},"Main.Msg":{"args":[],"tags":{"CopySelection":[],"UpdateContent":["String"],"DataNotSaved":["String"],"ToggleReveal":[],"GetData":[],"BlurSelection":[],"NewData":["Maybe.Maybe String"],"NewError":["String"],"DataSaved":["String"],"NewPassphrase":["String"],"NewEmail":["String"],"Lock":[],"TimeOut":["Int"]}}},"aliases":{},"message":"Main.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])
