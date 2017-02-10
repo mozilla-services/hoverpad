@@ -1,5 +1,6 @@
 const KEY_PREFIX = "hoverpad";
-var credentials;
+var email;
+var passphrase;
 var app;
 if (typeof(Elm) === "undefined") {
   // This happens if we're in the context of Electron.
@@ -9,47 +10,11 @@ if (typeof(Elm) === "undefined") {
   app = Elm.Main.fullscreen();
 }
 
-function placeCaretAtEnd(el) {
-  return function() {
-    el.focus();
-    if (typeof window.getSelection != "undefined"
-        && typeof document.createRange != "undefined") {
-      var range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      var sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    } else if (typeof document.body.createTextRange != "undefined") {
-      var textRange = document.body.createTextRange();
-      textRange.moveToElementText(el);
-      textRange.collapse(false);
-      textRange.select();
-    }
-  };
-}
+app.ports.getData.subscribe(function(credentials) {
+  console.log(credentials);
 
-app.ports.getData.subscribe(function(token) {
-  var debounceEvent;
-  document.querySelector('div[contenteditable]').addEventListener('input', function(event) {
-    console.log('input detected', event.target);
-    if (debounceEvent) {
-      clearTimeout(debounceEvent);
-    }
-    debounceEvent = setTimeout(function() {
-      console.log('event triggered');
-      event.target.blur();
-      app.ports.input.send(event.target.innerHTML);
-      setTimeout(placeCaretAtEnd(event.target), 10);
-    }, 800);
-  });
-
-  // Update global credentials state;
-  credentials = token.split(',', 2);
-  console.log(token, credentials);
-
-  const email = credentials[0];
-  const passphrase = credentials[1];
+  email = credentials.email;
+  passphrase = credentials.passphrase;
   const key = KEY_PREFIX + '-' + email;
 
   if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
@@ -70,7 +35,7 @@ app.ports.getData.subscribe(function(token) {
 function decryptAndNotify(passphrase, encryptedContent) {
   console.log(email, passphrase, encryptedContent);
   if (!encryptedContent) {
-    app.ports.newData.send("New pad");
+    app.ports.newData.send(null);
     return;
   }
   decrypt(passphrase, encryptedContent)
@@ -84,8 +49,6 @@ function decryptAndNotify(passphrase, encryptedContent) {
 }
 
 app.ports.setData.subscribe(function(content) {
-  const email = credentials[0];
-  const passphrase = credentials[1];
   const key = KEY_PREFIX + '-' + email;
 
   encrypt(passphrase, content.replace(/<br>$/g, ''))
