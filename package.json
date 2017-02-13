@@ -9,9 +9,11 @@
     "fx-web-ext": "npm run build && web-ext build -s build && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
     "publish-to-gh-pages": "mkdir -p dist && cp -r index.html *.js *.css icons dist && gh-pages --dist ./dist",
-    "build-cordova": "cp encryption.js hoverpad.js index.html ports.js style.css www",
+    "build-cordova": "cp index.html *.js *.css www",
     "cordova-emulate-android": "npm run build-cordova && cordova emulate android",
-    "cordova-android": "npm run build-cordova && cordova run android"
+    "cordova-android": "npm run build-cordova && cordova run android",
+    "cordova-emulate-ios": "npm run build-cordova && cordova emulate ios",
+    "cordova-ios": "npm run build-cordova && cordova run ios"
   },
   "repository": {
     "type": "git",
