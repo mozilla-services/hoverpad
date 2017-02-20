@@ -10,27 +10,27 @@ if (typeof(Elm) === "undefined") {
   app = Elm.Main.fullscreen();
 }
 
-app.ports.getData.subscribe(function(credentials) {
-  console.log(credentials);
+// app.ports.getData.subscribe(function(credentials) {
+//   console.log(credentials);
 
-  email = credentials.email;
-  passphrase = credentials.passphrase;
-  const key = KEY_PREFIX + '-' + email;
+//   email = credentials.email;
+//   passphrase = credentials.passphrase;
+//   const key = KEY_PREFIX + '-' + email;
 
-  if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
-    decryptAndNotify(passphrase, localStorage.getItem(key));
-  } else {
-    chrome.storage.local.get(
-      key,
-      data => {
-        if (chrome.runtime.lastError) {
-          console.error('Nothing retrieved', chrome.runtime.lastError);
-        }
-        console.log('get', data);
-        decryptAndNotify(passphrase, data[key]);
-    });
-  }
-});
+//   if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
+//     decryptAndNotify(passphrase, localStorage.getItem(key));
+//   } else {
+//     chrome.storage.local.get(
+//       key,
+//       data => {
+//         if (chrome.runtime.lastError) {
+//           console.error('Nothing retrieved', chrome.runtime.lastError);
+//         }
+//         console.log('get', data);
+//         decryptAndNotify(passphrase, data[key]);
+//     });
+//   }
+// });
 
 function decryptAndNotify(passphrase, encryptedContent) {
   console.log(email, passphrase, encryptedContent);
@@ -48,33 +48,16 @@ function decryptAndNotify(passphrase, encryptedContent) {
     });
 }
 
-app.ports.setData.subscribe(function(content) {
+app.ports.encryptData.subscribe(function(content) {
   const key = KEY_PREFIX + '-' + email;
 
   encrypt(passphrase, content.replace(/<br>$/g, ''))
     .then(encryptedContent => {
-      if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
-        localStorage.setItem(key, encryptedContent)
-        app.ports.dataSaved.send("");
-      } else {
-        var data = {};
-        data[key] = encryptedContent;
-        console.log('set', data)
-        chrome.storage.local.set(
-          data,
-          () => {
-            if (chrome.runtime.lastError) {
-              console.error('Error saving to chrome.storage', chrome.runtime.lastError);
-              app.ports.dataNotSaved.send(chrome.runtime.lastError);
-              return;
-            }
-            app.ports.dataSaved.send("");
-          });
-      }
+      app.ports.dataEncrypted.send(encryptedContent);
     })
     .catch(err => {
       console.error('Error encrypting', err);
-      app.ports.dataNotSaved.send(err.message);
+      app.ports.dataNotEncrypted.send(err.message);
     });
 });
 

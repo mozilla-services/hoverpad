@@ -4,10 +4,16 @@ import Time
 import Html
 import Html.Attributes
 import Html.Events
-import Json.Decode
-import Json.Encode
+import Json.Decode as Decode
+import Json.Encode as Encode
+import Kinto
 import Process
 import Task
+
+
+kintoServer =
+    "https://kinto.dev.mozaws.net/v1/"
+
 
 
 -- Model
@@ -16,16 +22,18 @@ import Task
 type
     Msg
     -- Load stored data: GetData -> NewData
-    -- then on user input: UpdateContent -> Debounce (via TimeOut) -> setData -> DataSaved
+    -- then on user input: UpdateContent -> Debounce (via TimeOut) -> encryptData (out port) -> DataEncrypted (in port) -> saveData -> DataSaved
     = NewEmail String
     | NewPassphrase String
     | NewData (Maybe String)
     | UpdateContent String
     | NewError String
     | GetData
+    | DataRetrieved (Result Kinto.Error String)
     | Lock
-    | DataSaved String
-    | DataNotSaved String
+    | DataEncrypted String
+    | DataNotEncrypted String
+    | DataSaved (Result Kinto.Error String)
     | BlurSelection
     | CopySelection
     | ToggleReveal
@@ -50,12 +58,13 @@ type alias Model =
         -- "Process.sleep" with a "debounceCount". Once we received the last
         -- one, we act on it.
         Int
+    , encryptedData : Maybe String
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" "" False "" False 0 ! []
+    Model True "" "" "" "" False "" False 0 Nothing ! []
 
 
 
@@ -72,7 +81,14 @@ update message model =
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            { model | error = "" } ! [ getData { email = model.email, passphrase = model.passphrase } ]
+            { model | error = "" } ! [ getData model.email model.passphrase ]
+
+        DataRetrieved result ->
+            let
+                _ =
+                    Debug.log "data retrieved" result
+            in
+                model ! []
 
         BlurSelection ->
             model ! [ blurSelection "" ]
@@ -108,12 +124,16 @@ update message model =
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
 
         Lock ->
-            { model | lock = True, content = "", passphrase = "" } ! [ setData model.content ]
+            { model | lock = True, content = "", passphrase = "" } ! [ encryptData model.content ]
 
-        DataSaved _ ->
-            { model | modified = False } ! []
+        DataSaved result ->
+            let
+                _ =
+                    Debug.log "kinto result" result
+            in
+                { model | modified = False } ! []
 
-        DataNotSaved error ->
+        DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
 
         ToggleReveal ->
@@ -121,9 +141,59 @@ update message model =
 
         TimeOut debounceCount ->
             if debounceCount == model.debounceCount then
-                { model | debounceCount = 0 } ! [ setData model.content ]
+                { model | debounceCount = 0 } ! [ encryptData model.content ]
             else
                 model ! []
+
+        DataEncrypted encrypted ->
+            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData model.email model.passphrase encrypted ]
+
+
+
+-- Kinto related
+
+
+recordResource : Kinto.Resource String
+recordResource =
+    Kinto.recordResource
+        "default"
+        "hoverpad"
+        (Decode.field "content" Decode.string)
+
+
+decodeContent : Decode.Decoder String
+decodeContent =
+    (Decode.field "content" Decode.string)
+
+
+encodeContent : String -> Encode.Value
+encodeContent content =
+    Encode.object [ ( "content", Encode.string content ) ]
+
+
+saveData : String -> String -> String -> Cmd Msg
+saveData email passphrase content =
+    let
+        data =
+            encodeContent content
+
+        client =
+            Kinto.client kintoServer (Kinto.Basic email passphrase)
+    in
+        client
+            |> Kinto.replace recordResource "hoverpad-content" data
+            |> Kinto.send DataSaved
+
+
+getData : String -> String -> Cmd Msg
+getData email passphrase =
+    let
+        client =
+            Kinto.client kintoServer (Kinto.Basic email passphrase)
+    in
+        client
+            |> Kinto.get recordResource "hoverpad-content"
+            |> Kinto.send DataRetrieved
 
 
 
@@ -226,7 +296,7 @@ padView model =
 
 
 innerHtmlDecoder =
-    Json.Decode.at [ "target", "innerHTML" ] Json.Decode.string
+    Decode.at [ "target", "innerHTML" ] Decode.string
 
 
 contentEditable : Model -> Html.Html Msg
@@ -238,8 +308,8 @@ contentEditable model =
             else
                 ""
         , Html.Attributes.contenteditable True
-        , Html.Events.on "input" (Json.Decode.map UpdateContent innerHtmlDecoder)
-        , Html.Attributes.property "innerHTML" (Json.Encode.string model.loadedContent)
+        , Html.Events.on "input" (Decode.map UpdateContent innerHtmlDecoder)
+        , Html.Attributes.property "innerHTML" (Encode.string model.loadedContent)
         ]
         []
 
@@ -285,8 +355,8 @@ subscriptions model =
     Sub.batch
         [ newData NewData
         , newError NewError
-        , dataSaved DataSaved
-        , dataNotSaved DataNotSaved
+        , dataNotEncrypted DataNotEncrypted
+        , dataEncrypted DataEncrypted
         ]
 
 
@@ -307,25 +377,22 @@ main =
 -- Ports
 
 
-port getData : { email : String, passphrase : String } -> Cmd msg
-
-
 port newData : (Maybe String -> msg) -> Sub msg
 
 
 port newError : (String -> msg) -> Sub msg
 
 
-port setData : String -> Cmd msg
+port encryptData : String -> Cmd msg
 
 
-port dataSaved : (String -> msg) -> Sub msg
-
-
-port dataNotSaved : (String -> msg) -> Sub msg
+port dataNotEncrypted : (String -> msg) -> Sub msg
 
 
 port blurSelection : String -> Cmd msg
 
 
 port copySelection : String -> Cmd msg
+
+
+port dataEncrypted : (String -> msg) -> Sub msg
