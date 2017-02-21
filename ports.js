@@ -1,6 +1,4 @@
 const KEY_PREFIX = "hoverpad";
-var email;
-var passphrase;
 var app;
 if (typeof(Elm) === "undefined") {
   // This happens if we're in the context of Electron.
@@ -10,48 +8,24 @@ if (typeof(Elm) === "undefined") {
   app = Elm.Main.fullscreen();
 }
 
-// app.ports.getData.subscribe(function(credentials) {
-//   console.log(credentials);
-
-//   email = credentials.email;
-//   passphrase = credentials.passphrase;
-//   const key = KEY_PREFIX + '-' + email;
-
-//   if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
-//     decryptAndNotify(passphrase, localStorage.getItem(key));
-//   } else {
-//     chrome.storage.local.get(
-//       key,
-//       data => {
-//         if (chrome.runtime.lastError) {
-//           console.error('Nothing retrieved', chrome.runtime.lastError);
-//         }
-//         console.log('get', data);
-//         decryptAndNotify(passphrase, data[key]);
-//     });
-//   }
-// });
-
-function decryptAndNotify(passphrase, encryptedContent) {
-  console.log(email, passphrase, encryptedContent);
-  if (!encryptedContent) {
-    app.ports.newData.send(null);
+app.ports.decryptData.subscribe(function(data) {
+  console.log(data);
+  if (!data.content) {
+    app.ports.dataDecrypted.send(null);
     return;
   }
-  decrypt(passphrase, encryptedContent)
+  decrypt(data.passphrase, data.content)
     .then(content => {
-      app.ports.newData.send(content);
+      app.ports.dataDecrypted.send(content);
     })
     .catch(err => {
       console.error("Error decrypting", err);
-      app.ports.newError.send(err.message);
+      app.ports.dataNotDecrypted.send(err.message);
     });
-}
+});
 
-app.ports.encryptData.subscribe(function(content) {
-  const key = KEY_PREFIX + '-' + email;
-
-  encrypt(passphrase, content.replace(/<br>$/g, ''))
+app.ports.encryptData.subscribe(function(data) {
+  encrypt(data.passphrase, data.content.replace(/<br>$/g, ''))
     .then(encryptedContent => {
       app.ports.dataEncrypted.send(encryptedContent);
     })

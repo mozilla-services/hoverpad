@@ -21,11 +21,10 @@ kintoServer =
 
 type
     Msg
-    -- Load stored data: GetData -> NewData
+    -- Load stored data: GetData -> DataRetrieved
     -- then on user input: UpdateContent -> Debounce (via TimeOut) -> encryptData (out port) -> DataEncrypted (in port) -> saveData -> DataSaved
     = NewEmail String
     | NewPassphrase String
-    | NewData (Maybe String)
     | UpdateContent String
     | NewError String
     | GetData
@@ -33,6 +32,8 @@ type
     | Lock
     | DataEncrypted String
     | DataNotEncrypted String
+    | DataDecrypted (Maybe String)
+    | DataNotDecrypted String
     | DataSaved (Result Kinto.Error String)
     | BlurSelection
     | CopySelection
@@ -83,26 +84,28 @@ update message model =
         GetData ->
             { model | error = "" } ! [ getData model.email model.passphrase ]
 
-        DataRetrieved result ->
-            let
-                _ =
-                    Debug.log "data retrieved" result
-            in
-                model ! []
+        DataRetrieved (Ok data) ->
+            model ! [ decryptData (Debug.log "data retrieved" { content = data, passphrase = model.passphrase }) ]
 
-        BlurSelection ->
-            model ! [ blurSelection "" ]
+        DataRetrieved (Err error) ->
+            { model | error = (Debug.log "data not retrieved" (toString error)) } ! []
 
-        CopySelection ->
-            model ! [ copySelection "" ]
-
-        NewData data ->
+        DataDecrypted data ->
             { model
                 | loadedContent = Maybe.withDefault "Edit here" (Debug.log "new data" data)
                 , modified = False
                 , lock = False
             }
                 ! []
+
+        DataNotDecrypted error ->
+            { model | error = (Debug.log "data not decrypted" error) } ! []
+
+        BlurSelection ->
+            model ! [ blurSelection "" ]
+
+        CopySelection ->
+            model ! [ copySelection "" ]
 
         UpdateContent content ->
             let
@@ -124,7 +127,7 @@ update message model =
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
 
         Lock ->
-            { model | lock = True, content = "", passphrase = "" } ! [ encryptData model.content ]
+            { model | lock = True, content = "", passphrase = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
 
         DataSaved result ->
             let
@@ -133,20 +136,20 @@ update message model =
             in
                 { model | modified = False } ! []
 
-        DataNotEncrypted error ->
-            { model | error = (Debug.log "" error) } ! []
-
         ToggleReveal ->
             { model | reveal = not model.reveal } ! []
 
         TimeOut debounceCount ->
             if debounceCount == model.debounceCount then
-                { model | debounceCount = 0 } ! [ encryptData model.content ]
+                { model | debounceCount = 0 } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
             else
                 model ! []
 
         DataEncrypted encrypted ->
             { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData model.email model.passphrase encrypted ]
+
+        DataNotEncrypted error ->
+            { model | error = (Debug.log "" error) } ! []
 
 
 
@@ -353,10 +356,11 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ newData NewData
-        , newError NewError
+        [ newError NewError
         , dataNotEncrypted DataNotEncrypted
         , dataEncrypted DataEncrypted
+        , dataDecrypted DataDecrypted
+        , dataNotDecrypted DataNotDecrypted
         ]
 
 
@@ -377,13 +381,22 @@ main =
 -- Ports
 
 
-port newData : (Maybe String -> msg) -> Sub msg
+port decryptData : { content : String, passphrase : String } -> Cmd msg
+
+
+port dataDecrypted : (Maybe String -> msg) -> Sub msg
+
+
+port dataNotDecrypted : (String -> msg) -> Sub msg
 
 
 port newError : (String -> msg) -> Sub msg
 
 
-port encryptData : String -> Cmd msg
+port encryptData : { content : String, passphrase : String } -> Cmd msg
+
+
+port dataEncrypted : (String -> msg) -> Sub msg
 
 
 port dataNotEncrypted : (String -> msg) -> Sub msg
@@ -393,6 +406,3 @@ port blurSelection : String -> Cmd msg
 
 
 port copySelection : String -> Cmd msg
-
-
-port dataEncrypted : (String -> msg) -> Sub msg
