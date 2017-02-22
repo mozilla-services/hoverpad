@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "description": "Hoverpad",
   "scripts": {
-    "build": "rm -fr build/ web-ext-artifacts/ && elm-make Main.elm --output=build/hoverpad.js && cp encryption.js manifest.json ports.js style.css index.html build/",
+    "build": "rm -fr web-ext-artifacts/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
-    "fx-web-ext": "npm run build && web-ext build -s build && unzip -l web-ext-artifacts/*.zip",
+    "fx-web-ext": "npm run build && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
-    "publish-to-gh-pages": "mkdir -p dist && cp -r index.html *.js *.css icons dist && gh-pages --dist ./dist",
-    "build-cordova": "cp encryption.js hoverpad.js index.html ports.js style.css www",
-    "cordova-emulate-android": "npm run build-cordova && cordova emulate android",
-    "cordova-android": "npm run build-cordova && cordova run android"
+    "electron-packager": "electron-packager --out electron-apps/ --overwrite --platform=darwin,linux,win32 --ignore=\"(www|elm-stuff|platforms|plugins|icons)\" ./ hoverpad && cd electron-apps/ && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
+    "publish-to-gh-pages": "npm run build && gh-pages --dist ./www",
+    "cordova-emulate-android": "npm run build && cordova emulate android",
+    "cordova-android": "npm run build && cordova run android"
   },
   "repository": {
     "type": "git",
