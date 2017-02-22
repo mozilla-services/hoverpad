@@ -1,6 +1,6 @@
 {
   "name": "Hoverpad",
-  "version": "1.0.0",
+  "version": "1.7.0",
   "description": "Hoverpad",
   "scripts": {
     "build": "rm -fr web-ext-artifacts/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
