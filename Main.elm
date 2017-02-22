@@ -4,10 +4,16 @@ import Time
 import Html
 import Html.Attributes
 import Html.Events
-import Json.Decode
-import Json.Encode
+import Json.Decode as Decode
+import Json.Encode as Encode
+import Kinto
 import Process
 import Task
+
+
+kintoServer =
+    "https://kinto.dev.mozaws.net/v1/"
+
 
 
 -- Model
@@ -15,17 +21,20 @@ import Task
 
 type
     Msg
-    -- Load stored data: GetData -> NewData
-    -- then on user input: UpdateContent -> Debounce (via TimeOut) -> setData -> DataSaved
+    -- Load stored data: GetData -> DataRetrieved
+    -- then on user input: UpdateContent -> Debounce (via TimeOut) -> encryptData (out port) -> DataEncrypted (in port) -> saveData -> DataSaved
     = NewEmail String
     | NewPassphrase String
-    | NewData (Maybe String)
     | UpdateContent String
     | NewError String
     | GetData
+    | DataRetrieved (Result Kinto.Error String)
     | Lock
-    | DataSaved String
-    | DataNotSaved String
+    | DataEncrypted String
+    | DataNotEncrypted String
+    | DataDecrypted (Maybe String)
+    | DataNotDecrypted String
+    | DataSaved (Result Kinto.Error String)
     | BlurSelection
     | CopySelection
     | ToggleReveal
@@ -50,12 +59,13 @@ type alias Model =
         -- "Process.sleep" with a "debounceCount". Once we received the last
         -- one, we act on it.
         Int
+    , encryptedData : Maybe String
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" "" False "" False 0 ! []
+    Model True "" "" "" "" False "" False 0 Nothing ! []
 
 
 
@@ -72,21 +82,30 @@ update message model =
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            { model | error = "" } ! [ getData { email = model.email, passphrase = model.passphrase } ]
+            { model | error = "" } ! [ getData model.email model.passphrase ]
 
-        BlurSelection ->
-            model ! [ blurSelection "" ]
+        DataRetrieved (Ok data) ->
+            model ! [ decryptData (Debug.log "data retrieved" { content = data, passphrase = model.passphrase }) ]
 
-        CopySelection ->
-            model ! [ copySelection "" ]
+        DataRetrieved (Err error) ->
+            { model | error = (Debug.log "data not retrieved" (toString error)) } ! []
 
-        NewData data ->
+        DataDecrypted data ->
             { model
                 | loadedContent = Maybe.withDefault "Edit here" (Debug.log "new data" data)
                 , modified = False
                 , lock = False
             }
                 ! []
+
+        DataNotDecrypted error ->
+            { model | error = (Debug.log "data not decrypted" error) } ! []
+
+        BlurSelection ->
+            model ! [ blurSelection "" ]
+
+        CopySelection ->
+            model ! [ copySelection "" ]
 
         UpdateContent content ->
             let
@@ -108,22 +127,76 @@ update message model =
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
 
         Lock ->
-            { model | lock = True, content = "", passphrase = "" } ! [ setData model.content ]
+            { model | lock = True, content = "", passphrase = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
 
-        DataSaved _ ->
-            { model | modified = False } ! []
-
-        DataNotSaved error ->
-            { model | error = (Debug.log "" error) } ! []
+        DataSaved result ->
+            let
+                _ =
+                    Debug.log "kinto result" result
+            in
+                { model | modified = False } ! []
 
         ToggleReveal ->
             { model | reveal = not model.reveal } ! []
 
         TimeOut debounceCount ->
             if debounceCount == model.debounceCount then
-                { model | debounceCount = 0 } ! [ setData model.content ]
+                { model | debounceCount = 0 } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
             else
                 model ! []
+
+        DataEncrypted encrypted ->
+            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData model.email model.passphrase encrypted ]
+
+        DataNotEncrypted error ->
+            { model | error = (Debug.log "" error) } ! []
+
+
+
+-- Kinto related
+
+
+recordResource : Kinto.Resource String
+recordResource =
+    Kinto.recordResource
+        "default"
+        "hoverpad"
+        (Decode.field "content" Decode.string)
+
+
+decodeContent : Decode.Decoder String
+decodeContent =
+    (Decode.field "content" Decode.string)
+
+
+encodeContent : String -> Encode.Value
+encodeContent content =
+    Encode.object [ ( "content", Encode.string content ) ]
+
+
+saveData : String -> String -> String -> Cmd Msg
+saveData email passphrase content =
+    let
+        data =
+            encodeContent content
+
+        client =
+            Kinto.client kintoServer (Kinto.Basic email passphrase)
+    in
+        client
+            |> Kinto.replace recordResource "hoverpad-content" data
+            |> Kinto.send DataSaved
+
+
+getData : String -> String -> Cmd Msg
+getData email passphrase =
+    let
+        client =
+            Kinto.client kintoServer (Kinto.Basic email passphrase)
+    in
+        client
+            |> Kinto.get recordResource "hoverpad-content"
+            |> Kinto.send DataRetrieved
 
 
 
@@ -226,7 +299,7 @@ padView model =
 
 
 innerHtmlDecoder =
-    Json.Decode.at [ "target", "innerHTML" ] Json.Decode.string
+    Decode.at [ "target", "innerHTML" ] Decode.string
 
 
 contentEditable : Model -> Html.Html Msg
@@ -238,8 +311,8 @@ contentEditable model =
             else
                 ""
         , Html.Attributes.contenteditable True
-        , Html.Events.on "input" (Json.Decode.map UpdateContent innerHtmlDecoder)
-        , Html.Attributes.property "innerHTML" (Json.Encode.string model.loadedContent)
+        , Html.Events.on "input" (Decode.map UpdateContent innerHtmlDecoder)
+        , Html.Attributes.property "innerHTML" (Encode.string model.loadedContent)
         ]
         []
 
@@ -283,10 +356,11 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ newData NewData
-        , newError NewError
-        , dataSaved DataSaved
-        , dataNotSaved DataNotSaved
+        [ newError NewError
+        , dataNotEncrypted DataNotEncrypted
+        , dataEncrypted DataEncrypted
+        , dataDecrypted DataDecrypted
+        , dataNotDecrypted DataNotDecrypted
         ]
 
 
@@ -307,22 +381,25 @@ main =
 -- Ports
 
 
-port getData : { email : String, passphrase : String } -> Cmd msg
+port decryptData : { content : String, passphrase : String } -> Cmd msg
 
 
-port newData : (Maybe String -> msg) -> Sub msg
+port dataDecrypted : (Maybe String -> msg) -> Sub msg
+
+
+port dataNotDecrypted : (String -> msg) -> Sub msg
 
 
 port newError : (String -> msg) -> Sub msg
 
 
-port setData : String -> Cmd msg
+port encryptData : { content : String, passphrase : String } -> Cmd msg
 
 
-port dataSaved : (String -> msg) -> Sub msg
+port dataEncrypted : (String -> msg) -> Sub msg
 
 
-port dataNotSaved : (String -> msg) -> Sub msg
+port dataNotEncrypted : (String -> msg) -> Sub msg
 
 
 port blurSelection : String -> Cmd msg
