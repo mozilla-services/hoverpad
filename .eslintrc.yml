@@ -7,6 +7,9 @@ env:
 extends:
   - eslint:recommended
 
+globals:
+  Elm: false
+
 root: true
 
 rules:
@@ -16,3 +19,4 @@ rules:
   no-var: warn
   prefer-const: warn
   quotes: [error, single]
+  semi: [error, always]

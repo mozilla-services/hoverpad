@@ -16,31 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-var app = {
+const app = {
     // Application Constructor
-    initialize: function() {
-        document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
-    },
+  initialize: function() {
+    document.addEventListener('deviceready', this.onDeviceReady.bind(this), false);
+  },
 
     // deviceready Event Handler
     //
     // Bind any cordova events here. Common events are:
     // 'pause', 'resume', etc.
-    onDeviceReady: function() {
-        this.receivedEvent('deviceready');
-    },
+  onDeviceReady: function() {
+    this.receivedEvent('deviceready');
+  },
 
     // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
+  receivedEvent: function(id) {
+    const parentElement = document.getElementById(id);
+    const listeningElement = parentElement.querySelector('.listening');
+    const receivedElement = parentElement.querySelector('.received');
 
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
+    listeningElement.setAttribute('style', 'display:none;');
+    receivedElement.setAttribute('style', 'display:block;');
 
-        console.log('Received Event: ' + id);
-    }
+    // eslint-disable-next-line no-console
+    console.log('Received Event: ' + id);
+  }
 };
 
 app.initialize();
