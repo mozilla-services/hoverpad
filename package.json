@@ -5,13 +5,15 @@
   "scripts": {
     "build": "rm -fr web-ext-artifacts/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
+    "lint": "eslint .",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
     "fx-web-ext": "npm run build && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
     "electron-packager": "electron-packager --out electron-apps/ --overwrite --platform=darwin,linux,win32 --ignore=\"(www|elm-stuff|platforms|plugins|icons)\" ./ hoverpad && cd electron-apps/ && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "publish-to-gh-pages": "npm run build && gh-pages --dist ./www",
     "cordova-emulate-android": "npm run build && cordova emulate android",
-    "cordova-android": "npm run build && cordova run android"
+    "cordova-android": "npm run build && cordova run android",
+    "test": "npm run lint"
   },
   "repository": {
     "type": "git",
@@ -24,11 +26,12 @@
   },
   "homepage": "https://github.com/mozilla-services/hoverpad#readme",
   "devDependencies": {
+    "cordova": "^6.5.0",
+    "electron": "1.4.15",
     "elm": "^0.18.0",
     "elm-live": "^2.6.1",
-    "web-ext": "^1.7.0",
+    "eslint": "^3.16.1",
     "gh-pages": "^0.11.0",
-    "electron": "1.4.15",
-    "cordova": "^6.5.0"
+    "web-ext": "^1.7.0"
   }
 }
