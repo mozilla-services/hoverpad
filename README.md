@@ -1,6 +1,6 @@
 # Hoverpad
 
-![Hoverpad](https://cloud.githubusercontent.com/assets/229453/22067769/f0b61f04-dd92-11e6-8c3b-3360963144a8.png)
+![Hoverpad](hoverpad.png)
 
 A persistent pad — click a button in your browser and add some notes,
 which will persist even after browser restarts and be synced between
@@ -16,23 +16,23 @@ Try out [the demo](https://mozilla-services.github.io/hoverpad/)
 This extension includes:
 
 * A browser action that creates a popup — within the popup is:
-	* A form elements for entering the body text.
-		
+    * A form elements for entering the body text.
+
 Hoverpad uses the WebExtensions
-[Storage API](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/storage)
+[Storage API](https://developer.mozilla.org/Add-ons/WebExtensions/API/storage)
 to persist the notes.
 
 ## What it shows
 
 * How to persist data in a WebExtension using the Storage Sync API.
 
-## How to try the addon in Firefox?
+## How to try the add-on in Firefox?
 
-**You will need Firefox Beta or Firefox Nightly to use this addons.**
+**You will need Firefox Beta or Firefox Nightly to use this add-on.**
 
 ### From addons.mozilla.org
 
-Grab it from AMO: https://addons.mozilla.org/fr/firefox/addon/hoverpad/
+Grab it from AMO: https://addons.mozilla.org/firefox/addon/hoverpad/
 
 If you want to install while it is not verified yet, you can:
 
@@ -40,7 +40,7 @@ If you want to install while it is not verified yet, you can:
 2. Toggle `xpinstall.signatures.required` to true
 3. You will get automatic updates
 
-If you don't care about automatic updates, you can also install the latest XPI from there: https://github.com/Natim/hoverpad/releases
+If you don't care about automatic updates, you can also install the latest XPI from https://github.com/mozilla-services/hoverpad/releases
 
 ### From the source code
 
@@ -50,7 +50,7 @@ If you don't care about automatic updates, you can also install the latest XPI f
 4. You would need to do that each time you restart Firefox.
 5. You can click on the `Refresh` button to change the files and reload the add-on.
 
-## How to try the addon in Chrome?
+## How to try the add-on in Chrome?
 
 
 ### From the Chrome Store
@@ -59,7 +59,7 @@ Grab it from the Chrome Store: https://chrome.google.com/webstore/detail/hoverpa
 
 ### From the source code
 
-1. Go to ``chrome://extensions``
+1. Go to `chrome://extensions`
 2. Tick the Developer Mode
 3. Load the hoverpad repository folder.
 
@@ -70,25 +70,34 @@ application on your desktop.
 
 First install electron:
 
-    npm install -g electron
+```sh
+npm install -g electron
+```
 
 Then run the application:
 
-    electron electron.js
-
+```sh
+npm run electron
+```
 
 ## Mobile app
 
-Using [Cordova](), you can run the hoverpad as an application on your mobile.
+Using [Cordova](https://cordova.apache.org/), you can run the hoverpad as an application on your mobile.
 
-First install cordova:
+First install Cordova:
 
-    npm install -g cordova
+```sh
+npm install -g cordova
+```
 
 Then add the platform(s) you'd like to support:
 
-    cordova platform add android
+```sh
+cordova platform add android
+```
 
-Then run the application (here on android):
+Then run the application (here on Android):
 
-    npm run cordova-android
+```sh
+npm run cordova-android
+```
