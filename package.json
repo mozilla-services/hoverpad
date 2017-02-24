@@ -22,6 +22,7 @@
   "bugs": {
     "url": "https://github.com/mozilla-services/hoverpad/issues"
   },
+  "main": "electron.js",
   "homepage": "https://github.com/mozilla-services/hoverpad#readme",
   "devDependencies": {
     "elm": "^0.18.0",
