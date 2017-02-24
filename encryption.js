@@ -59,6 +59,7 @@ function joinIvAndData(iv, data) {
 }
 
 /* Encryption using email, passphrase and content */
+// eslint-disable-next-line no-unused-vars
 function encrypt(passphrase, content) {
   const initVector = new Uint8Array(ivLen);
   crypto.getRandomValues(initVector);
@@ -105,6 +106,7 @@ function separateIvFromData(buf) {
 }
 
 /* Decryption using email, passphrase and content */
+// eslint-disable-next-line no-unused-vars
 function decrypt(passphrase, encryptedContent) {
   const passphraseKey = encoder.encode(passphrase);
   const encryptedData = base64ToArrayBuffer(encryptedContent);
