@@ -1,0 +1,26 @@
+env:
+  browser: true
+  es6: true
+  node: true
+  webextensions: true
+
+extends:
+  - eslint:recommended
+
+globals:
+  Elm: false
+
+root: true
+
+rules:
+  eqeqeq: error
+  indent: [warn, 2]
+  no-console: warn
+  no-var: warn
+  object-curly-newline: error
+  prefer-const: warn
+  prefer-promise-reject-errors: error
+  quote-props: [warn, as-needed]
+  quotes: [error, single]
+  semi: [error, always]
+  space-in-parens: error

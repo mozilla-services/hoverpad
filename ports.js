@@ -1,6 +1,8 @@
-const KEY_PREFIX = "hoverpad";
-var app;
-if (typeof(Elm) === "undefined") {
+/* eslint-disable no-console */
+/* globals encrypt:false, decrypt:false */
+
+let app;
+if (typeof(Elm) === 'undefined') {
   // This happens if we're in the context of Electron.
   const Elm = require('./hoverpad.js');
   app = Elm.Main.fullscreen();
@@ -19,7 +21,7 @@ app.ports.decryptData.subscribe(function(data) {
       app.ports.dataDecrypted.send(content);
     })
     .catch(err => {
-      console.error("Error decrypting", err);
+      console.error('Error decrypting', err);
       app.ports.dataNotDecrypted.send(err.message);
     });
 });
@@ -40,10 +42,10 @@ app.ports.encryptData.subscribe(function(data) {
 
 app.ports.blurSelection.subscribe(function(content) {
   console.log('Blur');
-  document.execCommand("bold", false, null);
+  document.execCommand('bold', false, null);
 });
 
 app.ports.copySelection.subscribe(function(content) {
   console.log('Copy');
-  document.execCommand("copy", false, null);
+  document.execCommand('copy', false, null);
 });

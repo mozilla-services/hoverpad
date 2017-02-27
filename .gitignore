@@ -7,3 +7,4 @@ build/
 www/
 platforms/
 plugins/
+npm-debug.log
