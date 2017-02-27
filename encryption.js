@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 const ivLen = 16;
 const salt = '9i0+apMFBsbXMU9Kfai2Cw==';
 const encoder = new TextEncoder();
@@ -31,20 +33,20 @@ function generateKey(passphrase, appWiseSalt) {
 function base64ToArrayBuffer(base64) {
   const binary_string =  window.atob(base64);
   const len = binary_string.length;
-  const bytes = new Uint8Array( len );
+  const bytes = new Uint8Array(len);
   for (let i = 0; i < len; i++) {
     bytes[i] = binary_string.charCodeAt(i);
   }
   return bytes;
 }
 
-function arrayBufferToBase64( bytes ) {
+function arrayBufferToBase64(bytes) {
   let binary = '';
   const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode( bytes[ i ] );
+    binary += String.fromCharCode(bytes[ i ]);
   }
-  return window.btoa( binary );
+  return window.btoa(binary);
 }
 
 function joinIvAndData(iv, data) {
@@ -64,10 +66,9 @@ function encrypt(passphrase, content) {
   const initVector = new Uint8Array(ivLen);
   crypto.getRandomValues(initVector);
 
-  const passphraseKey = encoder.encode(passphrase);
+  // const passphraseKey = encoder.encode(passphrase);
   const data = encoder.encode(content);
 
-  // eslint-disable-next-line no-console
   console.debug('encrypt', passphrase, content);
 
   return generateKey(passphrase, salt)
@@ -81,14 +82,12 @@ function encrypt(passphrase, content) {
     .then(encryptedData => {
       const encryptedContent = joinIvAndData(initVector, new Uint8Array(encryptedData));
       const encrypted = arrayBufferToBase64(encryptedContent);
-      // eslint-disable-next-line no-console
       console.log(encrypted);
       return encrypted;
     });
 }
 
 function separateIvFromData(buf) {
-  // eslint-disable-next-line no-console
   console.log(buf, buf.length, ivLen);
   const iv = new Uint8Array(ivLen);
   const data = new Uint8Array(buf.length - ivLen);
@@ -100,7 +99,6 @@ function separateIvFromData(buf) {
       data[i - ivLen] = byte;
     }
   });
-  // eslint-disable-next-line no-console
   console.log(iv, data);
   return { iv, data };
 }
@@ -108,7 +106,7 @@ function separateIvFromData(buf) {
 /* Decryption using email, passphrase and content */
 // eslint-disable-next-line no-unused-vars
 function decrypt(passphrase, encryptedContent) {
-  const passphraseKey = encoder.encode(passphrase);
+  // const passphraseKey = encoder.encode(passphrase);
   const encryptedData = base64ToArrayBuffer(encryptedContent);
   let parts;
   try {
@@ -117,7 +115,6 @@ function decrypt(passphrase, encryptedContent) {
     return Promise.resolve('Reset previously malformed saved pad');
   }
 
-  // eslint-disable-next-line no-console
   console.debug('decrypt', passphrase, encryptedContent);
 
   return generateKey(passphrase, salt)
@@ -130,7 +127,6 @@ function decrypt(passphrase, encryptedContent) {
     })
     .then(decryptedArrayBuffer => {
       const decrypted = decoder.decode(decryptedArrayBuffer);
-      // eslint-disable-next-line no-console
       console.debug('decrypted', decrypted);
       return decrypted;
     });

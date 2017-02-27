@@ -20,3 +20,4 @@ rules:
   prefer-const: warn
   quotes: [error, single]
   semi: [error, always]
+  space-in-parens: error
