@@ -22,9 +22,10 @@ function generateKey(passphrase, appWiseSalt) {
         name: 'PBKDF2',
         salt: salt,
         iterations: 1000,
-        'hash': 'sha-256'},
+        hash: 'sha-256'
+      },
       key,
-      {name: 'AES-GCM', 'length': 256},
+      {name: 'AES-GCM', length: 256},
       true,
       ['encrypt', 'decrypt']);
   });
@@ -66,7 +67,6 @@ function encrypt(passphrase, content) {
   const initVector = new Uint8Array(ivLen);
   crypto.getRandomValues(initVector);
 
-  // const passphraseKey = encoder.encode(passphrase);
   const data = encoder.encode(content);
 
   console.debug('encrypt', passphrase, content);
@@ -74,8 +74,10 @@ function encrypt(passphrase, content) {
   return generateKey(passphrase, salt)
     .then(encryptionKey => {
       return crypto.subtle.encrypt(
-        {name: 'AES-GCM',
-          iv: initVector},
+        {
+          name: 'AES-GCM',
+          iv: initVector
+        },
         encryptionKey,
         data);
     })
@@ -106,7 +108,6 @@ function separateIvFromData(buf) {
 /* Decryption using email, passphrase and content */
 // eslint-disable-next-line no-unused-vars
 function decrypt(passphrase, encryptedContent) {
-  // const passphraseKey = encoder.encode(passphrase);
   const encryptedData = base64ToArrayBuffer(encryptedContent);
   let parts;
   try {
@@ -120,8 +121,10 @@ function decrypt(passphrase, encryptedContent) {
   return generateKey(passphrase, salt)
     .then(decryptionKey => {
       return crypto.subtle.decrypt(
-        {name: 'AES-GCM',
-          iv: parts.iv},
+        {
+          name: 'AES-GCM',
+          iv: parts.iv
+        },
         decryptionKey,
         parts.data);
     })

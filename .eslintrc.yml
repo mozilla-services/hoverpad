@@ -17,7 +17,10 @@ rules:
   indent: [warn, 2]
   no-console: warn
   no-var: warn
+  object-curly-newline: error
   prefer-const: warn
+  prefer-promise-reject-errors: error
+  quote-props: [warn, as-needed]
   quotes: [error, single]
   semi: [error, always]
   space-in-parens: error
