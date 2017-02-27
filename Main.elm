@@ -87,6 +87,14 @@ update message model =
         DataRetrieved (Ok data) ->
             model ! [ decryptData (Debug.log "data retrieved" { content = data, passphrase = model.passphrase }) ]
 
+        DataRetrieved (Err (Kinto.ServerError 404 _ error)) ->
+            { model
+                | loadedContent = "new data"
+                , modified = False
+                , lock = False
+            }
+                ! []
+
         DataRetrieved (Err error) ->
             { model | error = (Debug.log "data not retrieved" (toString error)) } ! []
 
