@@ -25,6 +25,9 @@ app.ports.decryptData.subscribe(function(data) {
 });
 
 app.ports.encryptData.subscribe(function(data) {
+  if (!data.content) {
+    return;
+  }
   encrypt(data.passphrase, data.content.replace(/<br>$/g, ''))
     .then(encryptedContent => {
       app.ports.dataEncrypted.send(encryptedContent);
