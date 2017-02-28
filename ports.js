@@ -2,7 +2,7 @@
 /* globals encrypt:false, decrypt:false */
 
 let app;
-if (typeof(Elm) === 'undefined') {
+if (typeof Elm === 'undefined') {
   // This happens if we're in the context of Electron.
   const Elm = require('./hoverpad.js');
   app = Elm.Main.fullscreen();
