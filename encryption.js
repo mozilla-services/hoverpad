@@ -10,29 +10,26 @@ function generateKey(passphrase, appWiseSalt) {
   const passphraseKey = encoder.encode(passphrase);
   const salt = encoder.encode(atob(appWiseSalt));
 
-  return crypto.subtle.importKey(
-    'raw',
-    passphraseKey,
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  ).then(key => {
-    return crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        salt: salt,
-        iterations: 1000,
-        hash: 'sha-256'
-      },
-      key,
-      {name: 'AES-GCM', length: 256},
-      true,
-      ['encrypt', 'decrypt']);
-  });
+  return crypto.subtle
+    .importKey('raw', passphraseKey, 'PBKDF2', false, ['deriveKey'])
+    .then(key => {
+      return crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: salt,
+          iterations: 1000,
+          hash: 'sha-256'
+        },
+        key,
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+    });
 }
 
 function base64ToArrayBuffer(base64) {
-  const binary_string =  window.atob(base64);
+  const binary_string = window.atob(base64);
   const len = binary_string.length;
   const bytes = new Uint8Array(len);
   for (let i = 0; i < len; i++) {
@@ -45,7 +42,7 @@ function arrayBufferToBase64(bytes) {
   let binary = '';
   const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[ i ]);
+    binary += String.fromCharCode(bytes[i]);
   }
   return window.btoa(binary);
 }
@@ -79,10 +76,14 @@ function encrypt(passphrase, content) {
           iv: initVector
         },
         encryptionKey,
-        data);
+        data
+      );
     })
     .then(encryptedData => {
-      const encryptedContent = joinIvAndData(initVector, new Uint8Array(encryptedData));
+      const encryptedContent = joinIvAndData(
+        initVector,
+        new Uint8Array(encryptedData)
+      );
       const encrypted = arrayBufferToBase64(encryptedContent);
       console.log(encrypted);
       return encrypted;
@@ -126,7 +127,8 @@ function decrypt(passphrase, encryptedContent) {
           iv: parts.iv
         },
         decryptionKey,
-        parts.data);
+        parts.data
+      );
     })
     .then(decryptedArrayBuffer => {
       const decrypted = decoder.decode(decryptedArrayBuffer);

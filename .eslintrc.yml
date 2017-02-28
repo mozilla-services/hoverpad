@@ -6,13 +6,19 @@ env:
 
 extends:
   - eslint:recommended
+  - prettier
 
 globals:
   Elm: false
 
+plugins:
+  - prettier
+
 root: true
 
 rules:
+  prettier/prettier: [warn, {printWidth: 80, singleQuote: true}]
+
   eqeqeq: error
   indent: [warn, 2]
   no-console: warn

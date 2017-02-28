@@ -1,10 +1,11 @@
 {
-  "name": "Hoverpad",
+  "name": "hoverpad",
   "version": "1.7.0",
-  "description": "Hoverpad",
+  "description": "Allows the user to make quick notes by clicking a button and entering text into the resulting popup. The notes are saved in storage and sync across profiles. See https://developer.mozilla.org/Add-ons/WebExtensions/Examples#hoverpad",
   "scripts": {
     "build": "rm -fr web-ext-artifacts/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
+    "format": "npm run lint -- --fix",
     "lint": "eslint .",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
     "fx-web-ext": "npm run build && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
@@ -32,6 +33,8 @@
     "elm": "^0.18.0",
     "elm-live": "^2.6.1",
     "eslint": "^3.16.1",
+    "eslint-config-prettier": "^1.4.0",
+    "eslint-plugin-prettier": "^2.0.1",
     "gh-pages": "^0.11.0",
     "web-ext": "^1.7.0"
   }
