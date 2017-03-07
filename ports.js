@@ -10,6 +10,39 @@ if (typeof Elm === 'undefined') {
   app = Elm.Main.fullscreen();
 }
 
+app.ports.getData.subscribe(function() {
+  if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
+    app.ports.newData.send(localStorage.getItem('hoverpad'));
+  } else {
+    chrome.storage.local.get(
+      'hoverpad',
+      data => {
+        if (chrome.runtime.lastError) {
+          console.error('Nothing retrieved', chrome.runtime.lastError);
+          app.ports.newError.send('Nothing retrieved');
+        } else {
+          app.ports.newData.send(data['hoverpad']);
+        }
+    });
+  }
+});
+
+app.ports.saveData.subscribe(function(encrypted) {
+  if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
+    localStorage.setItem('hoverpad', encrypted);
+    app.ports.dataSaved.send("");
+  } else {
+    chrome.storage.local.set({"hoverpad": encrypted}, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Nothing saved', chrome.runtime.lastError);
+          app.ports.newError.send('Nothing saved');
+        } else {
+          app.ports.dataSaved.send("");
+        }
+    });
+  }
+});
+
 app.ports.decryptData.subscribe(function(data) {
   console.log(data);
   if (!data.content) {

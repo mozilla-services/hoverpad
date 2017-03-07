@@ -11,30 +11,21 @@ import Process
 import Task
 
 
-kintoServer =
-    "https://kinto.dev.mozaws.net/v1/"
-
-
-
 -- Model
 
 
-type
-    Msg
-    -- Load stored data: GetData -> DataRetrieved
-    -- then on user input: UpdateContent -> Debounce (via TimeOut) -> encryptData (out port) -> DataEncrypted (in port) -> saveData -> DataSaved
-    = NewEmail String
-    | NewPassphrase String
+type Msg
+    = NewPassphrase String
     | UpdateContent String
     | NewError String
     | GetData
-    | DataRetrieved (Result Kinto.Error String)
+    | DataRetrieved (Maybe String)
     | Lock
     | DataEncrypted String
     | DataNotEncrypted String
     | DataDecrypted (Maybe String)
     | DataNotDecrypted String
-    | DataSaved (Result Kinto.Error String)
+    | DataSaved String
     | BlurSelection
     | CopySelection
     | ToggleReveal
@@ -44,7 +35,6 @@ type
 
 type alias Model =
     { lock : Bool
-    , email : String
     , passphrase : String
     , content : String
     , loadedContent :
@@ -65,7 +55,7 @@ type alias Model =
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" "" False "" False 0 Nothing ! []
+    Model True "" "" "" False "" False 0 Nothing ! []
 
 
 
@@ -75,28 +65,14 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        NewEmail email ->
-            { model | email = email } ! []
-
         NewPassphrase passphrase ->
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            { model | error = "" } ! [ getData model.email model.passphrase ]
+            model ! [ getData {} ]
 
-        DataRetrieved (Ok data) ->
+        DataRetrieved data ->
             model ! [ decryptData (Debug.log "data retrieved" { content = data, passphrase = model.passphrase }) ]
-
-        DataRetrieved (Err (Kinto.ServerError 404 _ error)) ->
-            { model
-                | loadedContent = "new data"
-                , modified = False
-                , lock = False
-            }
-                ! []
-
-        DataRetrieved (Err error) ->
-            { model | error = (Debug.log "data not retrieved" (toString error)) } ! []
 
         DataDecrypted data ->
             { model
@@ -137,12 +113,8 @@ update message model =
         Lock ->
             { model | lock = True, content = "", passphrase = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
 
-        DataSaved result ->
-            let
-                _ =
-                    Debug.log "kinto result" result
-            in
-                { model | modified = False } ! []
+        DataSaved _ ->
+            { model | modified = False } ! []
 
         ToggleReveal ->
             { model | reveal = not model.reveal } ! []
@@ -154,57 +126,10 @@ update message model =
                 model ! []
 
         DataEncrypted encrypted ->
-            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData model.email model.passphrase encrypted ]
+            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData encrypted ]
 
         DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
-
-
-
--- Kinto related
-
-
-recordResource : Kinto.Resource String
-recordResource =
-    Kinto.recordResource
-        "default"
-        "hoverpad"
-        (Decode.field "content" Decode.string)
-
-
-decodeContent : Decode.Decoder String
-decodeContent =
-    (Decode.field "content" Decode.string)
-
-
-encodeContent : String -> Encode.Value
-encodeContent content =
-    Encode.object [ ( "content", Encode.string content ) ]
-
-
-saveData : String -> String -> String -> Cmd Msg
-saveData email passphrase content =
-    let
-        data =
-            encodeContent content
-
-        client =
-            Kinto.client kintoServer (Kinto.Basic email passphrase)
-    in
-        client
-            |> Kinto.replace recordResource "hoverpad-content" data
-            |> Kinto.send DataSaved
-
-
-getData : String -> String -> Cmd Msg
-getData email passphrase =
-    let
-        client =
-            Kinto.client kintoServer (Kinto.Basic email passphrase)
-    in
-        client
-            |> Kinto.get recordResource "hoverpad-content"
-            |> Kinto.send DataRetrieved
 
 
 
@@ -225,19 +150,7 @@ formView model =
         , Html.div []
             [ Html.text model.error ]
         , Html.div []
-            [ Html.label [ Html.Attributes.for "email" ] [ Html.text "Email" ]
-            , Html.input
-                [ Html.Attributes.id "email"
-                , Html.Attributes.type_ "text"
-                , Html.Attributes.placeholder "joe.bart@team.tld"
-                , Html.Attributes.value model.email
-                , Html.Events.onInput NewEmail
-                ]
-                []
-            ]
-        , Html.div []
-            [ Html.label [ Html.Attributes.for "password" ] [ Html.text "Passphrase" ]
-            , Html.input
+            [ Html.input
                 [ Html.Attributes.id "password"
                 , Html.Attributes.type_ "password"
                 , Html.Attributes.placeholder "Passphrase"
@@ -249,7 +162,7 @@ formView model =
         , Html.div []
             [ Html.button
                 []
-                [ Html.text "Login and unlock" ]
+                [ Html.text "Unlock" ]
             ]
         , Html.div [ Html.Attributes.class "spacer" ] []
         ]
@@ -327,34 +240,25 @@ contentEditable model =
 
 view : Model -> Html.Html Msg
 view model =
-    let
-        title =
-            case model.lock of
-                True ->
-                    "Universal Notepad"
-
-                False ->
-                    model.email
-    in
-        Html.div [ Html.Attributes.class "outer-wrapper" ]
-            [ Html.header []
-                [ Html.h1 [] [ Html.text title ]
-                , Html.a
-                    [ Html.Attributes.id "lock"
-                    , Html.Attributes.href "#"
-                    , Html.Attributes.class <|
-                        if model.lock then
-                            "hidden"
-                        else
-                            ""
-                    , Html.Events.onClick Lock
-                    ]
-                    [ Html.text "Lock" ]
+    Html.div [ Html.Attributes.class "outer-wrapper" ]
+        [ Html.header []
+            [ Html.h1 [] [ Html.text "Universal Notepad" ]
+            , Html.a
+                [ Html.Attributes.id "lock"
+                , Html.Attributes.href "#"
+                , Html.Attributes.class <|
+                    if model.lock then
+                        "hidden"
+                    else
+                        ""
+                , Html.Events.onClick Lock
                 ]
-            , formView model
-            , padView model
-            , Html.footer [] [ Html.text "Available everywhere with your Email and Passphrase!" ]
+                [ Html.text "Lock" ]
             ]
+        , formView model
+        , padView model
+        , Html.footer [] [ Html.text "Available everywhere with your Firefox Account!" ]
+        ]
 
 
 
@@ -364,7 +268,9 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ newError NewError
+        [ newData DataRetrieved
+        , dataSaved DataSaved
+        , newError NewError
         , dataNotEncrypted DataNotEncrypted
         , dataEncrypted DataEncrypted
         , dataDecrypted DataDecrypted
@@ -387,9 +293,34 @@ main =
 
 
 -- Ports
+--
+-- Load stored data: GetData -> DataRetrieved
+-- then on user input: UpdateContent -> Debounce (via TimeOut) -> encryptData (out port) -> DataEncrypted (in port) -> saveData -> DataSaved
+--
+-- Get Data
 
 
-port decryptData : { content : String, passphrase : String } -> Cmd msg
+port getData : {} -> Cmd msg
+
+
+port newData : (Maybe String -> msg) -> Sub msg
+
+
+
+-- Save data
+
+
+port saveData : String -> Cmd msg
+
+
+port dataSaved : (String -> msg) -> Sub msg
+
+
+
+-- Decrypt data ports
+
+
+port decryptData : { content : Maybe String, passphrase : String } -> Cmd msg
 
 
 port dataDecrypted : (Maybe String -> msg) -> Sub msg
@@ -401,6 +332,10 @@ port dataNotDecrypted : (String -> msg) -> Sub msg
 port newError : (String -> msg) -> Sub msg
 
 
+
+-- Encrypt data ports
+
+
 port encryptData : { content : String, passphrase : String } -> Cmd msg
 
 
@@ -408,6 +343,10 @@ port dataEncrypted : (String -> msg) -> Sub msg
 
 
 port dataNotEncrypted : (String -> msg) -> Sub msg
+
+
+
+-- Handle content editable features
 
 
 port blurSelection : String -> Cmd msg
