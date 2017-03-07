@@ -104,6 +104,11 @@ header {
   padding: 20px;
 }
 
+hr {
+    border-bottom: 1px solid #dde1e4;
+    width: 100%;
+}
+
 h1 {
   flex: auto;
   font-size: inherit;

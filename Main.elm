@@ -27,7 +27,6 @@ type Msg
     | DataNotDecrypted String
     | DataSaved String
     | BlurSelection
-    | CopySelection
     | ToggleReveal
       -- Used to debounce (see debounceCount)
     | TimeOut Int
@@ -87,9 +86,6 @@ update message model =
 
         BlurSelection ->
             model ! [ blurSelection "" ]
-
-        CopySelection ->
-            model ! [ copySelection "" ]
 
         UpdateContent content ->
             let
@@ -188,12 +184,6 @@ controlBar model =
                 else
                     "Reveal all"
             ]
-        , Html.button
-            [ Html.Attributes.id "copy"
-            , Html.Events.onClick CopySelection
-            ]
-            [ Html.text "Copy selection"
-            ]
         , Html.p
             []
             [ Html.text <|
@@ -238,11 +228,55 @@ contentEditable model =
         []
 
 
+menu : Model -> String -> Html.Html Msg
+menu model icon =
+    Html.div
+        [ Html.Attributes.class "dropdown" ]
+        [ Html.button
+            [ Html.Attributes.class "btn btn-default dropdown-toggle", Html.Attributes.type_ "undefined", Html.Attributes.id "dropdownMenu1" ]
+            [ Html.text "Dropdown"
+            , Html.span
+                [ Html.Attributes.class "caret" ]
+                []
+            ]
+        , Html.ul
+            [ Html.Attributes.class "dropdown-menu" ]
+            [ Html.li
+                []
+                [ Html.a
+                    [ Html.Attributes.href "#" ]
+                    [ Html.text "Action" ]
+                ]
+            , Html.li
+                []
+                [ Html.a
+                    [ Html.Attributes.href "#" ]
+                    [ Html.text "Another action" ]
+                ]
+            , Html.li
+                []
+                [ Html.a
+                    [ Html.Attributes.href "#" ]
+                    [ Html.text "Something else here" ]
+                ]
+            , Html.li
+                [ Html.Attributes.class "divider" ]
+                []
+            , Html.li
+                []
+                [ Html.a
+                    [ Html.Attributes.href "#" ]
+                    [ Html.text "Separated link" ]
+                ]
+            ]
+        ]
+
+
 view : Model -> Html.Html Msg
 view model =
     Html.div [ Html.Attributes.class "outer-wrapper" ]
         [ Html.header []
-            [ Html.h1 [] [ Html.text "Universal Notepad" ]
+            [ menu model "gear"
             , Html.a
                 [ Html.Attributes.id "lock"
                 , Html.Attributes.href "#"
@@ -255,6 +289,7 @@ view model =
                 ]
                 [ Html.text "Lock" ]
             ]
+        , Html.hr [] []
         , formView model
         , padView model
         , Html.footer [] [ Html.text "Available everywhere with your Firefox Account!" ]
