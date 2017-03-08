@@ -183,31 +183,50 @@ formView model =
 controlBar : Model -> Html.Html Msg
 controlBar model =
     Html.div
-        [ Html.Attributes.class "control-bar"
-        ]
+        []
         [ Html.button
             [ Html.Attributes.id "sel"
+            , Html.Attributes.class "btn btn-default"
+            , Html.Attributes.title "Blur selection"
             , Html.Events.onClick BlurSelection
             ]
-            [ Html.text "Blur selection" ]
+            [ Html.i [ Html.Attributes.class "glyphicon glyphicon-sunglasses" ] [] ]
+        , Html.text " "
         , Html.button
             [ Html.Attributes.id "toggle-all"
-            , Html.Events.onClick ToggleReveal
-            ]
-            [ Html.text <|
+            , Html.Attributes.class "btn btn-default"
+            , Html.Attributes.title <|
                 if model.reveal then
                     "Blur all"
                 else
                     "Reveal all"
+            , Html.Events.onClick ToggleReveal
             ]
-        , Html.p
-            []
-            [ Html.text <|
-                if model.modified then
-                    "Modified"
-                else
-                    "Saved"
+            [ Html.i
+                [ Html.Attributes.class <|
+                    if model.reveal then
+                        "glyphicon glyphicon-eye-close"
+                    else
+                        "glyphicon glyphicon-eye-open"
+                ]
+                []
             ]
+        , Html.text " "
+        , padStatus model
+        ]
+
+
+padStatus : Model -> Html.Html Msg
+padStatus model =
+    Html.span
+        [ Html.Attributes.class "btn btn-default"
+        , Html.Attributes.title "Pad status"
+        ]
+        [ Html.text <|
+            if model.modified then
+                "Modified"
+            else
+                "Saved"
         ]
 
 
@@ -220,8 +239,7 @@ padView model =
             else
                 "pad"
         ]
-        [ controlBar model
-        , contentEditable model
+        [ contentEditable model
         ]
 
 
@@ -263,7 +281,7 @@ gearMenu model icon =
                 ]
                 [ Html.i [ Html.Attributes.class "glyphicon glyphicon-cog" ] [] ]
             , Html.ul
-                [ Html.Attributes.class "dropdown-menu" ]
+                [ Html.Attributes.class "dropdown-menu dropdown-menu-right" ]
                 [ Html.li
                     []
                     [ Html.a
@@ -305,16 +323,16 @@ gearMenu model icon =
 
 view : Model -> Html.Html Msg
 view model =
-    Html.div [ Html.Attributes.class "outer-wrapper" ]
-        [ Html.header [ Html.Attributes.class "row" ]
-            [ Html.div [ Html.Attributes.class "col-md-offset-11" ]
-                [ if not model.lock then
-                    gearMenu model "gear"
-                  else
-                    Html.div [] []
+    Html.div [ Html.Attributes.class "outer-wrapper container" ]
+        [ if not model.lock then
+            Html.header [ Html.Attributes.class "row" ]
+                [ Html.div [ Html.Attributes.class "col-md-6" ]
+                    [ controlBar model ]
+                , Html.div [ Html.Attributes.class "col-md-1 col-md-offset-5" ]
+                    [ gearMenu model "gear" ]
                 ]
-            ]
-        , Html.hr [] []
+          else
+            Html.div [] []
         , formView model
         , padView model
         , Html.footer [] [ Html.text "Available everywhere with your Firefox Account!" ]
