@@ -30,6 +30,7 @@ type Msg
     | ToggleReveal
       -- Used to debounce (see debounceCount)
     | TimeOut Int
+    | ToggleGearMenu
 
 
 type alias Model =
@@ -49,12 +50,24 @@ type alias Model =
         -- one, we act on it.
         Int
     , encryptedData : Maybe String
+    , gearMenuOpen : Bool
     }
 
 
 init : ( Model, Cmd msg )
 init =
-    Model True "" "" "" False "" False 0 Nothing ! []
+    { lock = True
+    , passphrase = ""
+    , content = ""
+    , loadedContent = ""
+    , modified = False
+    , error = ""
+    , reveal = False
+    , debounceCount = 0
+    , encryptedData = Nothing
+    , gearMenuOpen = False
+    }
+        ! []
 
 
 
@@ -126,6 +139,9 @@ update message model =
 
         DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
+
+        ToggleGearMenu ->
+            { model | gearMenuOpen = not model.gearMenuOpen } ! []
 
 
 
@@ -228,55 +244,66 @@ contentEditable model =
         []
 
 
-menu : Model -> String -> Html.Html Msg
-menu model icon =
-    Html.div
-        [ Html.Attributes.class "dropdown" ]
-        [ Html.button
-            [ Html.Attributes.class "btn btn-default dropdown-toggle", Html.Attributes.type_ "undefined", Html.Attributes.id "dropdownMenu1" ]
-            [ Html.text "Dropdown"
-            , Html.span
-                [ Html.Attributes.class "caret" ]
-                []
+gearMenu : Model -> String -> Html.Html Msg
+gearMenu model icon =
+    let
+        divClass =
+            if model.gearMenuOpen then
+                "dropdown open"
+            else
+                "dropdown"
+    in
+        Html.div
+            [ Html.Attributes.class divClass ]
+            [ Html.button
+                [ Html.Attributes.class "btn btn-default dropdown-toggle"
+                , Html.Attributes.type_ "undefined"
+                , Html.Attributes.id "dropdownMenu1"
+                , Html.Events.onClick ToggleGearMenu
+                ]
+                [ Html.text "Dropdown"
+                , Html.span
+                    [ Html.Attributes.class "caret" ]
+                    []
+                ]
+            , Html.ul
+                [ Html.Attributes.class "dropdown-menu" ]
+                [ Html.li
+                    []
+                    [ Html.a
+                        [ Html.Attributes.href "#" ]
+                        [ Html.text "Action" ]
+                    ]
+                , Html.li
+                    []
+                    [ Html.a
+                        [ Html.Attributes.href "#" ]
+                        [ Html.text "Another action" ]
+                    ]
+                , Html.li
+                    []
+                    [ Html.a
+                        [ Html.Attributes.href "#" ]
+                        [ Html.text "Something else here" ]
+                    ]
+                , Html.li
+                    [ Html.Attributes.class "divider" ]
+                    []
+                , Html.li
+                    []
+                    [ Html.a
+                        [ Html.Attributes.href "#" ]
+                        [ Html.text "Separated link" ]
+                    ]
+                ]
             ]
-        , Html.ul
-            [ Html.Attributes.class "dropdown-menu" ]
-            [ Html.li
-                []
-                [ Html.a
-                    [ Html.Attributes.href "#" ]
-                    [ Html.text "Action" ]
-                ]
-            , Html.li
-                []
-                [ Html.a
-                    [ Html.Attributes.href "#" ]
-                    [ Html.text "Another action" ]
-                ]
-            , Html.li
-                []
-                [ Html.a
-                    [ Html.Attributes.href "#" ]
-                    [ Html.text "Something else here" ]
-                ]
-            , Html.li
-                [ Html.Attributes.class "divider" ]
-                []
-            , Html.li
-                []
-                [ Html.a
-                    [ Html.Attributes.href "#" ]
-                    [ Html.text "Separated link" ]
-                ]
-            ]
-        ]
 
 
 view : Model -> Html.Html Msg
 view model =
     Html.div [ Html.Attributes.class "outer-wrapper" ]
         [ Html.header []
-            [ menu model "gear"
+            [ gearMenu model "gear"
             , Html.a
                 [ Html.Attributes.id "lock"
                 , Html.Attributes.href "#"
