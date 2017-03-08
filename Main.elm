@@ -211,17 +211,12 @@ controlBar model =
                 ]
                 []
             ]
-        , Html.text " "
-        , padStatus model
         ]
 
 
 padStatus : Model -> Html.Html Msg
 padStatus model =
-    Html.span
-        [ Html.Attributes.class "btn btn-default"
-        , Html.Attributes.title "Pad status"
-        ]
+    Html.div [ Html.Attributes.class "status" ]
         [ Html.text <|
             if model.modified then
                 "Modified"
@@ -328,7 +323,9 @@ view model =
             Html.header [ Html.Attributes.class "row" ]
                 [ Html.div [ Html.Attributes.class "col-md-6" ]
                     [ controlBar model ]
-                , Html.div [ Html.Attributes.class "col-md-1 col-md-offset-5" ]
+                , Html.div [ Html.Attributes.class "col-md-1 col-md-offset-4" ]
+                    [ padStatus model ]
+                , Html.div [ Html.Attributes.class "col-md-1" ]
                     [ gearMenu model "gear" ]
                 ]
           else

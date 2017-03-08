@@ -105,17 +105,10 @@ header {
   border-bottom: 1px solid #dde1e4;
 }
 
-h1 {
-  flex: auto;
-  font-size: inherit;
-  font-weight: normal;
-  margin: 0;
-}
-
-#lock {
-  color: inherit;
-  flex: none;
-  text-decoration: none;
+.status {
+    line-height: 50px;
+    height: 35px;
+    font-size: 10px;
 }
 
 footer {
@@ -123,19 +116,4 @@ footer {
   flex: none;
   font-size: 16px;
   padding: 20px;
-}
-
-.control-bar {
-  display: flex;
-  flex-flow: row;
-}
-
-.control-bar button {
-  flex: none;
-  margin-right: 5px;
-}
-
-.control-bar p {
-  flex: auto;
-  text-align: right;
 }
