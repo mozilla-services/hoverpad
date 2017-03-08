@@ -120,7 +120,7 @@ update message model =
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
 
         Lock ->
-            { model | lock = True, content = "", passphrase = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
+            { model | lock = True, gearMenuOpen = False, content = "", passphrase = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
 
         DataSaved _ ->
             { model | modified = False } ! []
@@ -261,11 +261,7 @@ gearMenu model icon =
                 , Html.Attributes.id "dropdownMenu1"
                 , Html.Events.onClick ToggleGearMenu
                 ]
-                [ Html.text "Dropdown"
-                , Html.span
-                    [ Html.Attributes.class "caret" ]
-                    []
-                ]
+                [ Html.i [ Html.Attributes.class "glyphicon glyphicon-cog" ] [] ]
             , Html.ul
                 [ Html.Attributes.class "dropdown-menu" ]
                 [ Html.li
@@ -292,8 +288,16 @@ gearMenu model icon =
                 , Html.li
                     []
                     [ Html.a
-                        [ Html.Attributes.href "#" ]
-                        [ Html.text "Separated link" ]
+                        [ Html.Attributes.id "lock"
+                        , Html.Attributes.href "#"
+                        , Html.Attributes.class <|
+                            if model.lock then
+                                "hidden"
+                            else
+                                ""
+                        , Html.Events.onClick Lock
+                        ]
+                        [ Html.text "Lock" ]
                     ]
                 ]
             ]
@@ -302,19 +306,13 @@ gearMenu model icon =
 view : Model -> Html.Html Msg
 view model =
     Html.div [ Html.Attributes.class "outer-wrapper" ]
-        [ Html.header []
-            [ gearMenu model "gear"
-            , Html.a
-                [ Html.Attributes.id "lock"
-                , Html.Attributes.href "#"
-                , Html.Attributes.class <|
-                    if model.lock then
-                        "hidden"
-                    else
-                        ""
-                , Html.Events.onClick Lock
+        [ Html.header [ Html.Attributes.class "row" ]
+            [ Html.div [ Html.Attributes.class "col-md-offset-11" ]
+                [ if not model.lock then
+                    gearMenu model "gear"
+                  else
+                    Html.div [] []
                 ]
-                [ Html.text "Lock" ]
             ]
         , Html.hr [] []
         , formView model
