@@ -56,8 +56,8 @@ type alias Model =
 
 init : ( Model, Cmd msg )
 init =
-    { lock = True
-    , passphrase = ""
+    { lock = False
+    , passphrase = "test"
     , content = ""
     , loadedContent = ""
     , modified = False
@@ -271,46 +271,62 @@ gearMenu model icon =
             [ Html.button
                 [ Html.Attributes.class "btn btn-default dropdown-toggle"
                 , Html.Attributes.type_ "undefined"
-                , Html.Attributes.id "dropdownMenu1"
+                , Html.Attributes.id "gear-menu"
                 , Html.Events.onClick ToggleGearMenu
                 ]
                 [ Html.i [ Html.Attributes.class "glyphicon glyphicon-cog" ] [] ]
             , Html.ul
                 [ Html.Attributes.class "dropdown-menu dropdown-menu-right" ]
                 [ Html.li
-                    []
-                    [ Html.a
-                        [ Html.Attributes.href "#" ]
-                        [ Html.text "Action" ]
+                    [ Html.Attributes.class "disabled" ]
+                    [ Html.a [] [ Html.text "Security settings" ]
                     ]
                 , Html.li
                     []
                     [ Html.a
                         [ Html.Attributes.href "#" ]
-                        [ Html.text "Another action" ]
+                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-ok" ] []
+                        , Html.text " "
+                        , Html.text "Leave unlocked"
+                        ]
                     ]
                 , Html.li
                     []
                     [ Html.a
                         [ Html.Attributes.href "#" ]
-                        [ Html.text "Something else here" ]
+                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
+                        , Html.text " "
+                        , Html.text "Lock after 5 minutes"
+                        ]
+                    ]
+                , Html.li
+                    []
+                    [ Html.a
+                        [ Html.Attributes.id "lock"
+                        , Html.Events.onClick Lock
+                        ]
+                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
+                        , Html.text " "
+                        , Html.text "Lock now"
+                        ]
                     ]
                 , Html.li
                     [ Html.Attributes.class "divider" ]
                     []
                 , Html.li
+                    [ Html.Attributes.class "disabled" ]
+                    [ Html.a [] [ Html.text "Sync settings" ]
+                    ]
+                , Html.li
                     []
                     [ Html.a
                         [ Html.Attributes.id "lock"
-                        , Html.Attributes.href "#"
-                        , Html.Attributes.class <|
-                            if model.lock then
-                                "hidden"
-                            else
-                                ""
                         , Html.Events.onClick Lock
                         ]
-                        [ Html.text "Lock" ]
+                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
+                        , Html.text " "
+                        , Html.text "Enable sync"
+                        ]
                     ]
                 ]
             ]

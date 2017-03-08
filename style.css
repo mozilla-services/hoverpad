@@ -105,6 +105,11 @@ header {
   border-bottom: 1px solid #dde1e4;
 }
 
+.glyphicon-none:before {
+    content: "\2122";
+    color: transparent !important;
+}
+
 .status {
     line-height: 50px;
     height: 35px;
