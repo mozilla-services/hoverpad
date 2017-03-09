@@ -14,6 +14,12 @@ import Task
 -- Model
 
 
+type alias Flags =
+    { lockAfterSeconds : Maybe Int
+    , lastModified : Maybe Int
+    }
+
+
 type Msg
     = NewPassphrase String
     | UpdateContent String
@@ -36,6 +42,8 @@ type Msg
 
 type alias Model =
     { lock : Bool
+    , lockAfterSeconds : Maybe Int
+    , lastModified : Maybe Int
     , passphrase : String
     , content : String
     , loadedContent :
@@ -55,9 +63,11 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd msg )
-init =
+init : Flags -> ( Model, Cmd msg )
+init flags =
     { lock = False
+    , lockAfterSeconds = flags.lockAfterSeconds
+    , lastModified = flags.lastModified
     , passphrase = "test"
     , content = ""
     , loadedContent = ""
@@ -68,7 +78,7 @@ init =
     , encryptedData = Nothing
     , gearMenuOpen = False
     }
-        ! []
+        ! [ getData {} ]
 
 
 
@@ -393,7 +403,7 @@ subscriptions model =
 
 
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , subscriptions = subscriptions
         , update = update
