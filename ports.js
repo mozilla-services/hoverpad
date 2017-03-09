@@ -98,7 +98,7 @@ if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
   chrome.storage.local.get(
     ['lockAfterSeconds', 'lastModified'],
     data => {
-      createElmApp({lockAfterSeconds: data['lockAfterSeconds'],
-                    lastModified: data['lastModified']});
+      createElmApp({lockAfterSeconds: data['lockAfterSeconds'] || null,
+                    lastModified: data['lastModified'] || null});
     });
 }
