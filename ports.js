@@ -44,7 +44,6 @@ app.ports.saveData.subscribe(function(encrypted) {
 });
 
 app.ports.decryptData.subscribe(function(data) {
-  console.log(data);
   if (!data.content) {
     app.ports.dataDecrypted.send(null);
     return;
@@ -74,11 +73,13 @@ app.ports.encryptData.subscribe(function(data) {
 });
 
 app.ports.blurSelection.subscribe(function(content) {
-  console.log('Blur');
   document.execCommand('bold', false, null);
 });
 
 app.ports.copySelection.subscribe(function(content) {
-  console.log('Copy');
   document.execCommand('copy', false, null);
+});
+
+window.addEventListener('click', function () {
+  app.ports.bodyClicked.send("");
 });

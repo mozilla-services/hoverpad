@@ -31,6 +31,7 @@ type Msg
       -- Used to debounce (see debounceCount)
     | TimeOut Int
     | ToggleGearMenu
+    | CloseGearMenu String
 
 
 type alias Model =
@@ -150,6 +151,9 @@ update message model =
 
         ToggleGearMenu ->
             { model | gearMenuOpen = not model.gearMenuOpen } ! []
+
+        CloseGearMenu _ ->
+            { model | gearMenuOpen = False } ! []
 
 
 
@@ -280,7 +284,7 @@ gearMenu model icon =
                 [ Html.Attributes.class "btn btn-default dropdown-toggle"
                 , Html.Attributes.type_ "undefined"
                 , Html.Attributes.id "gear-menu"
-                , Html.Events.onClick ToggleGearMenu
+                , onClickStopPropagation ToggleGearMenu
                 ]
                 [ Html.i [ Html.Attributes.class "glyphicon glyphicon-cog" ] [] ]
             , Html.ul
@@ -311,6 +315,7 @@ gearMenu model icon =
                     []
                     [ Html.a
                         [ Html.Attributes.id "lock"
+                        , Html.Attributes.href "#"
                         , Html.Events.onClick Lock
                         ]
                         [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
@@ -323,12 +328,12 @@ gearMenu model icon =
                     []
                 , Html.li
                     [ Html.Attributes.class "disabled" ]
-                    [ Html.a [] [ Html.text "Sync settings" ]
-                    ]
+                    [ Html.a [] [ Html.text "Sync settings" ] ]
                 , Html.li
                     []
                     [ Html.a
                         [ Html.Attributes.id "lock"
+                        , Html.Attributes.href "#"
                         , Html.Events.onClick Lock
                         ]
                         [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
@@ -338,6 +343,11 @@ gearMenu model icon =
                     ]
                 ]
             ]
+
+
+onClickStopPropagation : msg -> Html.Attribute msg
+onClickStopPropagation message =
+    Html.Events.onWithOptions "click" { stopPropagation = True, preventDefault = False } (Decode.succeed message)
 
 
 view : Model -> Html.Html Msg
@@ -374,6 +384,7 @@ subscriptions model =
         , dataEncrypted DataEncrypted
         , dataDecrypted DataDecrypted
         , dataNotDecrypted DataNotDecrypted
+        , bodyClicked CloseGearMenu
         ]
 
 
@@ -396,6 +407,13 @@ main =
 -- Load stored data: GetData -> DataRetrieved
 -- then on user input: UpdateContent -> Debounce (via TimeOut) -> encryptData (out port) -> DataEncrypted (in port) -> saveData -> DataSaved
 --
+-- CloseGearMenu from Javascript
+
+
+port bodyClicked : (String -> msg) -> Sub msg
+
+
+
 -- Get Data
 
 
