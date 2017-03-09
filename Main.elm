@@ -19,7 +19,7 @@ type Msg
     | UpdateContent String
     | NewError String
     | GetData
-    | DataRetrieved (Maybe String)
+    | DataRetrieved (List String)
     | Lock
     | DataEncrypted String
     | DataNotEncrypted String
@@ -83,8 +83,16 @@ update message model =
         GetData ->
             model ! [ getData {} ]
 
-        DataRetrieved data ->
-            model ! [ decryptData (Debug.log "data retrieved" { content = data, passphrase = model.passphrase }) ]
+        DataRetrieved list ->
+            case list of
+                [ "hoverpad", data ] ->
+                    model ! [ decryptData (Debug.log "data retrieved" { content = Just data, passphrase = model.passphrase }) ]
+
+                [ key, value ] ->
+                    Debug.crash ("Unsupported newData key: " ++ key)
+
+                _ ->
+                    Debug.crash "Should never retrieve empty params."
 
         DataDecrypted data ->
             { model
@@ -135,7 +143,7 @@ update message model =
                 model ! []
 
         DataEncrypted encrypted ->
-            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData encrypted ]
+            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData { key = "pad", content = "encrypted" } ]
 
         DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
@@ -394,14 +402,14 @@ main =
 port getData : {} -> Cmd msg
 
 
-port newData : (Maybe String -> msg) -> Sub msg
+port newData : (List String -> msg) -> Sub msg
 
 
 
 -- Save data
 
 
-port saveData : String -> Cmd msg
+port saveData : { key : String, content : String } -> Cmd msg
 
 
 port dataSaved : (String -> msg) -> Sub msg

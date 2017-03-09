@@ -12,16 +12,16 @@ if (typeof Elm === 'undefined') {
 
 app.ports.getData.subscribe(function() {
   if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
-    app.ports.newData.send(localStorage.getItem('hoverpad'));
+    app.ports.newData.send(["hoverpad", localStorage.getItem('hoverpad')]);
   } else {
     chrome.storage.local.get(
-      'hoverpad',
+      ['hoverpad'],
       data => {
         if (chrome.runtime.lastError) {
           console.error('Nothing retrieved', chrome.runtime.lastError);
           app.ports.newError.send('Nothing retrieved');
         } else {
-          app.ports.newData.send(data['hoverpad']);
+          app.ports.newData.send(['hoverpad', data['hoverpad']]);
         }
     });
   }
