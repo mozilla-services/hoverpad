@@ -2,11 +2,11 @@
 /* globals encrypt:false, decrypt:false */
 const CONTENT_KEY = "pad";
 
-const IS_LOCAL_STORAGE = (typeof chrome == "undefined" || typeof chrome.storage == "undefined");
+const IS_WEB_EXTENSION = (typeof chrome === "object" && typeof chrome.storage === "object");
 
 
 function getItem(key) {
-  if (IS_LOCAL_STORAGE) {
+  if (!IS_WEB_EXTENSION) {
     return Promise.resolve(localStorage.getItem(key));
   } else {
     return new Promise(function(resolve, reject) {
@@ -22,7 +22,7 @@ function getItem(key) {
 }
 
 function setItem(key, value) {
-  if (IS_LOCAL_STORAGE) {
+  if (!IS_WEB_EXTENSION) {
     localStorage.setItem(key, value);
     return Promise.resolve(null);
   } else {
@@ -109,9 +109,56 @@ function createElmApp(flags) {
     document.execCommand('copy', false, null);
   });
 
+  app.ports.enableSync.subscribe(function(content) {
+    if (!IS_WEB_EXTENSION) {
+      document.location.href = "https://kinto.dev.mozaws.net/v1/fxa-oauth/login?redirect=http://localhost:8000/%23auth=";
+    } else {
+      getItem('fxaToken')
+        .then(function(fxaToken) {
+          if (fxaToken !== null) {
+            console.log("Bearer ", fxaToken);
+            app.ports.syncEnabled.send(fxaToken);
+          } else {
+            chrome.runtime.sendMessage({ action: 'authenticate' });
+          }
+        });
+    }
+  });
+
   window.addEventListener('click', function () {
     app.ports.bodyClicked.send("");
   });
+
+
+  if (!IS_WEB_EXTENSION) {
+    // Lecture du hash si dispo
+    if (window.location.hash.indexOf("#auth=") === 0) {
+      const token = window.location.hash.split('#auth=')[1];
+      setItem("bearer", token)
+        .then(function() {
+          window.location.hash = "";
+          console.log("Bearer ", token);
+          app.ports.syncEnabled.send(token);
+        })
+        .catch(function(err) {
+          app.ports.newError.send(err.message);
+          console.error(err);
+        });
+    }
+  } else {
+    chrome.runtime.onMessage.addListener(function (eventData) {
+      switch (eventData.action) {
+      case 'authenticated':
+        console.log("Bearer ", eventData.bearer);
+        app.ports.syncEnabled.send(eventData.bearer);
+        break;
+      case 'error':
+        console.error(eventData.error);
+        app.ports.newError.send(eventData.error);
+        break;
+      }
+    });
+  }
 
   return app;
 }
@@ -124,9 +171,11 @@ function handleMaybeInt(maybeString) {
   return maybeInt;
 }
 
-getItem('lockAfterSeconds')
-  .then(function(lockAfterSeconds) {
-    const flags = {lockAfterSeconds: handleMaybeInt(lockAfterSeconds)};
+Promise.all([getItem('lockAfterSeconds'), getItem('bearer')])
+  .then(function(results) {
+    console.log("Flags", results);
+    const flags = {lockAfterSeconds: handleMaybeInt(results[0]),
+                   fxaToken: results[1]};
     createElmApp(flags);
   })
   .catch(function(err) {

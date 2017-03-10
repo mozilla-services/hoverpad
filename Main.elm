@@ -15,7 +15,9 @@ import Task
 
 
 type alias Flags =
-    { lockAfterSeconds : Maybe Int }
+    { lockAfterSeconds : Maybe Int
+    , fxaToken : Maybe String
+    }
 
 
 type Msg
@@ -38,11 +40,15 @@ type Msg
     | ToggleGearMenu
     | CloseGearMenu String
     | SetLockAfterSeconds (Maybe Int)
+    | EnableSyncing
+    | DisableSyncing
+    | FxaTokenRetrieved String
 
 
 type alias Model =
     { lock : Bool
     , lockAfterSeconds : Maybe Int
+    , fxaToken : Maybe String
     , passphrase : String
     , content : String
     , loadedContent :
@@ -68,6 +74,7 @@ init flags =
         model =
             { lock = False
             , lockAfterSeconds = flags.lockAfterSeconds
+            , fxaToken = flags.fxaToken
             , passphrase = "test"
             , content = ""
             , loadedContent = ""
@@ -215,6 +222,15 @@ update message model =
                         }
                   ]
 
+        EnableSyncing ->
+            model ! [ enableSync {} ]
+
+        DisableSyncing ->
+            { model | fxaToken = Nothing } ! [ saveData { key = "bearer", content = Encode.null } ]
+
+        FxaTokenRetrieved token ->
+            { model | fxaToken = Just token } ! []
+
 
 
 -- View
@@ -351,6 +367,29 @@ lockMenuEntry model title lockAfterSeconds =
             ]
 
 
+syncMenuEntry : Model -> Html.Html Msg
+syncMenuEntry model =
+    let
+        ( label, eventName ) =
+            case model.fxaToken of
+                Nothing ->
+                    ( "Enable sync", EnableSyncing )
+
+                Just fxaToken ->
+                    ( "Disable sync", DisableSyncing )
+    in
+        Html.li []
+            [ Html.a
+                [ Html.Attributes.href "#"
+                , Html.Events.onClick eventName
+                ]
+                [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
+                , Html.text " "
+                , Html.text label
+                ]
+            ]
+
+
 gearMenu : Model -> String -> Html.Html Msg
 gearMenu model icon =
     let
@@ -399,18 +438,7 @@ gearMenu model icon =
                 , Html.li
                     [ Html.Attributes.class "disabled" ]
                     [ Html.a [] [ Html.text "Sync settings" ] ]
-                , Html.li
-                    []
-                    [ Html.a
-                        [ Html.Attributes.id "lock"
-                        , Html.Attributes.href "#"
-                        , Html.Events.onClick Lock
-                        ]
-                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
-                        , Html.text " "
-                        , Html.text "Enable sync"
-                        ]
-                    ]
+                , syncMenuEntry model
                 ]
             ]
 
@@ -455,6 +483,7 @@ subscriptions model =
         , dataDecrypted DataDecrypted
         , dataNotDecrypted DataNotDecrypted
         , bodyClicked CloseGearMenu
+        , syncEnabled FxaTokenRetrieved
         ]
 
 
@@ -530,6 +559,16 @@ port dataEncrypted : (String -> msg) -> Sub msg
 
 
 port dataNotEncrypted : (String -> msg) -> Sub msg
+
+
+
+-- Firefox Account Flow
+
+
+port enableSync : {} -> Cmd msg
+
+
+port syncEnabled : (String -> msg) -> Sub msg
 
 
 
