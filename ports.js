@@ -124,12 +124,9 @@ function handleMaybeInt(maybeString) {
   return maybeInt;
 }
 
-Promise.all([getItem('lockAfterSeconds'), getItem('lastModified')])
-  .then(function(results) {
-    const lockAfterSeconds = handleMaybeInt(results[0]);
-    const lastModified = handleMaybeInt(results[1]);
-    createElmApp({lockAfterSeconds: lockAfterSeconds,
-                  lastModified: lastModified});
+getItem('lockAfterSeconds')
+  .then(function(lockAfterSeconds) {
+    createElmApp({lockAfterSeconds: handleMaybeInt(lockAfterSeconds)});
   })
   .catch(function(err) {
     console.error(err);

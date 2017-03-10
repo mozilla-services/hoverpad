@@ -15,9 +15,7 @@ import Task
 
 
 type alias Flags =
-    { lockAfterSeconds : Maybe Int
-    , lastModified : Maybe Int
-    }
+    { lockAfterSeconds : Maybe Int }
 
 
 type Msg
@@ -36,6 +34,7 @@ type Msg
     | ToggleReveal
       -- Used to debounce (see debounceCount)
     | TimeOut Int
+    | LockTimeOut Int
     | ToggleGearMenu
     | CloseGearMenu String
     | SetLockAfterSeconds (Maybe Int)
@@ -44,7 +43,6 @@ type Msg
 type alias Model =
     { lock : Bool
     , lockAfterSeconds : Maybe Int
-    , lastModified : Maybe Int
     , passphrase : String
     , content : String
     , loadedContent :
@@ -64,11 +62,10 @@ type alias Model =
     }
 
 
-init : Flags -> ( Model, Cmd msg )
+init : Flags -> ( Model, Cmd Msg )
 init flags =
     { lock = False
     , lockAfterSeconds = flags.lockAfterSeconds
-    , lastModified = flags.lastModified
     , passphrase = "test"
     , content = ""
     , loadedContent = ""
@@ -79,11 +76,24 @@ init flags =
     , encryptedData = Nothing
     , gearMenuOpen = False
     }
-        ! [ getData {} ]
+        ! [ getData {}
+          , startLockTimeOut flags.lockAfterSeconds 0
+          ]
 
 
 
 -- Update
+
+
+startLockTimeOut : Maybe Int -> Int -> Cmd Msg
+startLockTimeOut lockAfterSeconds debounceCount =
+    case lockAfterSeconds of
+        Nothing ->
+            Cmd.none
+
+        Just lockAfterSeconds ->
+            Process.sleep (Time.second * (toFloat lockAfterSeconds))
+                |> Task.perform (always (LockTimeOut debounceCount))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -134,7 +144,9 @@ update message model =
                     , debounceCount = debounceCount
                     , lock = False
                 }
-                    ! [ Process.sleep Time.second |> Task.perform (always (TimeOut debounceCount)) ]
+                    ! [ Process.sleep Time.second |> Task.perform (always (TimeOut debounceCount))
+                      , startLockTimeOut model.lockAfterSeconds debounceCount
+                      ]
 
         NewError error ->
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
@@ -150,7 +162,13 @@ update message model =
 
         TimeOut debounceCount ->
             if debounceCount == model.debounceCount then
-                { model | debounceCount = 0 } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
+                model ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
+            else
+                model ! []
+
+        LockTimeOut debounceCount ->
+            if debounceCount == model.debounceCount then
+                update Lock model
             else
                 model ! []
 
@@ -341,10 +359,10 @@ gearMenu model icon =
                     [ Html.a [] [ Html.text "Security settings" ]
                     ]
                 , lockMenuEntry model "Leave unlocked" Nothing
+                , lockMenuEntry model "Lock after 10 seconds" <| Just 10
                 , lockMenuEntry model "Lock after 5 minutes" <| Just 300
                 , lockMenuEntry model "Lock after 10 minutes" <| Just 600
                 , lockMenuEntry model "Lock after 1 hour" <| Just 3600
-                , lockMenuEntry model "Lock on restart" <| Just 0
                 , Html.li
                     []
                     [ Html.a
