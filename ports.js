@@ -126,7 +126,8 @@ function handleMaybeInt(maybeString) {
 
 getItem('lockAfterSeconds')
   .then(function(lockAfterSeconds) {
-    createElmApp({lockAfterSeconds: handleMaybeInt(lockAfterSeconds)});
+    const flags = {lockAfterSeconds: handleMaybeInt(lockAfterSeconds)};
+    createElmApp(flags);
   })
   .catch(function(err) {
     console.error(err);

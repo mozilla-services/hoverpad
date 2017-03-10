@@ -64,21 +64,22 @@ type alias Model =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    { lock = False
-    , lockAfterSeconds = flags.lockAfterSeconds
-    , passphrase = "test"
-    , content = ""
-    , loadedContent = ""
-    , modified = False
-    , error = ""
-    , reveal = False
-    , debounceCount = 0
-    , encryptedData = Nothing
-    , gearMenuOpen = False
-    }
-        ! [ getData {}
-          , startLockTimeOut flags.lockAfterSeconds 0
-          ]
+    let
+        model =
+            { lock = False
+            , lockAfterSeconds = flags.lockAfterSeconds
+            , passphrase = "test"
+            , content = ""
+            , loadedContent = ""
+            , modified = False
+            , error = ""
+            , reveal = False
+            , debounceCount = 0
+            , encryptedData = Nothing
+            , gearMenuOpen = False
+            }
+    in
+        lockOnStartup model flags.lockAfterSeconds
 
 
 
@@ -92,8 +93,24 @@ startLockTimeOut lockAfterSeconds debounceCount =
             Cmd.none
 
         Just lockAfterSeconds ->
-            Process.sleep (Time.second * (toFloat lockAfterSeconds))
-                |> Task.perform (always (LockTimeOut debounceCount))
+            if lockAfterSeconds /= 0 then
+                Process.sleep (Time.second * (toFloat lockAfterSeconds))
+                    |> Task.perform (always (LockTimeOut debounceCount))
+            else
+                Cmd.none
+
+
+lockOnStartup : Model -> Maybe Int -> ( Model, Cmd Msg )
+lockOnStartup model lockAfterSeconds =
+    case lockAfterSeconds of
+        Nothing ->
+            model ! [ getData {} ]
+
+        Just seconds ->
+            if seconds == 0 then
+                update Lock model
+            else
+                model ! [ getData {} ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -122,7 +139,7 @@ update message model =
                 , modified = False
                 , lock = False
             }
-                ! []
+                ! [ startLockTimeOut model.lockAfterSeconds model.debounceCount ]
 
         DataNotDecrypted error ->
             { model | error = (Debug.log "data not decrypted" error) } ! []
@@ -363,6 +380,7 @@ gearMenu model icon =
                 , lockMenuEntry model "Lock after 5 minutes" <| Just 300
                 , lockMenuEntry model "Lock after 10 minutes" <| Just 600
                 , lockMenuEntry model "Lock after 1 hour" <| Just 3600
+                , lockMenuEntry model "Lock on restart" <| Just 0
                 , Html.li
                     []
                     [ Html.a
