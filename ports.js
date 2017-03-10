@@ -10,7 +10,7 @@ function getItem(key) {
     return Promise.resolve(localStorage.getItem(key));
   } else {
     return new Promise(function(resolve, reject) {
-      chrome.storage.local.get(CONTENT_KEY, function(data) {
+      chrome.storage.local.get(key, function(data) {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
         } else {
