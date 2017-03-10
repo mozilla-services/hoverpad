@@ -1,5 +1,45 @@
 /* eslint-disable no-console */
 /* globals encrypt:false, decrypt:false */
+const CONTENT_KEY = "pad";
+
+const IS_LOCAL_STORAGE = (typeof chrome == "undefined" || typeof chrome.storage == "undefined");
+
+
+function getItem(key) {
+  if (IS_LOCAL_STORAGE) {
+    return Promise.resolve(localStorage.getItem(key));
+  } else {
+    return new Promise(function(resolve, reject) {
+      chrome.storage.local.get(CONTENT_KEY, function(data) {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(data[key] || null);
+        }
+      });
+    });
+  }
+}
+
+function setItem(key, value) {
+  if (IS_LOCAL_STORAGE) {
+    localStorage.setItem(key, value);
+    return Promise.resolve(null);
+  } else {
+    return new Promise(function(resolve, reject) {
+      let payload = {};
+      payload[key] = value;
+      chrome.storage.local.set(payload, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  }
+}
+
 
 function createElmApp(flags) {
   let app;
@@ -11,40 +51,25 @@ function createElmApp(flags) {
   }
 
   app.ports.getData.subscribe(function() {
-    if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
-      let data = localStorage.getItem('hoverpad');
-      app.ports.newData.send(["hoverpad", data || ""]);
-    } else {
-      chrome.storage.local.get(
-        'hoverpad',
-        data => {
-          if (chrome.runtime.lastError) {
-            console.error('Nothing retrieved', chrome.runtime.lastError);
-            app.ports.newError.send('Nothing retrieved');
-          } else {
-            console.log(data);
-            app.ports.newData.send(['hoverpad', data['hoverpad'] || ""]);
-          }
+    getItem(CONTENT_KEY)
+      .then(function(data) {
+        app.ports.newData.send([CONTENT_KEY, data || ""]);
+      })
+      .catch(function(err) {
+        console.error(err);
+        app.ports.newError.send('Nothing retrieved: ' + err.message);
       });
-    }
   });
 
   app.ports.saveData.subscribe(function(data) {
-    if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
-      localStorage.setItem(data.key, data.content);
-      app.ports.dataSaved.send("");
-    } else {
-      let payload = {};
-      payload[data.key] = data.content;
-      chrome.storage.local.set(payload, () => {
-          if (chrome.runtime.lastError) {
-            console.error('Nothing saved', chrome.runtime.lastError);
-            app.ports.newError.send('Nothing saved');
-          } else {
-            app.ports.dataSaved.send("");
-          }
+    setItem(data.key, data.content)
+      .then(function() {
+        app.ports.dataSaved.send("");
+      })
+      .catch(function(err) {
+        console.error(err);
+        app.ports.newError.send('Nothing retrieved: ' + err.message);
       });
-    }
   });
 
   app.ports.decryptData.subscribe(function(data) {
@@ -91,14 +116,21 @@ function createElmApp(flags) {
   return app;
 }
 
-if (typeof chrome == "undefined" || typeof chrome.storage == "undefined") {
-  createElmApp({lockAfterSeconds: localStorage.getItem('lockAfterSeconds'),
-                lastModified: localStorage.getItem('lastModified')});
-} else {
-  chrome.storage.local.get(
-    ['lockAfterSeconds', 'lastModified'],
-    data => {
-      createElmApp({lockAfterSeconds: data['lockAfterSeconds'] || null,
-                    lastModified: data['lastModified'] || null});
-    });
+function handleMaybeInt(maybeString) {
+  const maybeInt = parseInt(maybeString, 10);
+  if (Number.isNaN(maybeInt)) {
+    return null;
+  }
+  return maybeInt;
 }
+
+Promise.all([getItem('lockAfterSeconds'), getItem('lastModified')])
+  .then(function(results) {
+    const lockAfterSeconds = handleMaybeInt(results[0]);
+    const lastModified = handleMaybeInt(results[1]);
+    createElmApp({lockAfterSeconds: lockAfterSeconds,
+                  lastModified: lastModified});
+  })
+  .catch(function(err) {
+    console.error(err);
+  });
