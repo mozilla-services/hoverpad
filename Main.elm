@@ -38,6 +38,7 @@ type Msg
     | TimeOut Int
     | ToggleGearMenu
     | CloseGearMenu String
+    | SetLockAfterSeconds (Maybe Int)
 
 
 type alias Model =
@@ -96,7 +97,7 @@ update message model =
 
         DataRetrieved list ->
             case list of
-                [ "hoverpad", data ] ->
+                [ "pad", data ] ->
                     model ! [ decryptData (Debug.log "data retrieved" { content = Just data, passphrase = model.passphrase }) ]
 
                 [ key, value ] ->
@@ -154,7 +155,7 @@ update message model =
                 model ! []
 
         DataEncrypted encrypted ->
-            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData { key = "pad", content = "encrypted" } ]
+            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData { key = "pad", content = Encode.string encrypted } ]
 
         DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
@@ -164,6 +165,20 @@ update message model =
 
         CloseGearMenu _ ->
             { model | gearMenuOpen = False } ! []
+
+        SetLockAfterSeconds lockAfterSeconds ->
+            { model | lockAfterSeconds = lockAfterSeconds }
+                ! [ saveData
+                        { key = "lockAfterSeconds"
+                        , content =
+                            case lockAfterSeconds of
+                                Just val ->
+                                    Encode.int val
+
+                                Nothing ->
+                                    Encode.null
+                        }
+                  ]
 
 
 
@@ -279,6 +294,28 @@ contentEditable model =
         []
 
 
+lockMenuEntry : Model -> String -> Maybe Int -> Html.Html Msg
+lockMenuEntry model title lockAfterSeconds =
+    let
+        iconClass =
+            if model.lockAfterSeconds == lockAfterSeconds then
+                "glyphicon glyphicon-ok"
+            else
+                "glyphicon glyphicon-none"
+    in
+        Html.li
+            []
+            [ Html.a
+                [ Html.Attributes.href "#"
+                , Html.Events.onClick (SetLockAfterSeconds lockAfterSeconds)
+                ]
+                [ Html.i [ Html.Attributes.class iconClass ] []
+                , Html.text " "
+                , Html.text title
+                ]
+            ]
+
+
 gearMenu : Model -> String -> Html.Html Msg
 gearMenu model icon =
     let
@@ -303,24 +340,11 @@ gearMenu model icon =
                     [ Html.Attributes.class "disabled" ]
                     [ Html.a [] [ Html.text "Security settings" ]
                     ]
-                , Html.li
-                    []
-                    [ Html.a
-                        [ Html.Attributes.href "#" ]
-                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-ok" ] []
-                        , Html.text " "
-                        , Html.text "Leave unlocked"
-                        ]
-                    ]
-                , Html.li
-                    []
-                    [ Html.a
-                        [ Html.Attributes.href "#" ]
-                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
-                        , Html.text " "
-                        , Html.text "Lock after 5 minutes"
-                        ]
-                    ]
+                , lockMenuEntry model "Leave unlocked" Nothing
+                , lockMenuEntry model "Lock after 5 minutes" <| Just 300
+                , lockMenuEntry model "Lock after 10 minutes" <| Just 600
+                , lockMenuEntry model "Lock after 1 hour" <| Just 3600
+                , lockMenuEntry model "Lock on restart" <| Just 0
                 , Html.li
                     []
                     [ Html.a
@@ -437,7 +461,7 @@ port newData : (List String -> msg) -> Sub msg
 -- Save data
 
 
-port saveData : { key : String, content : String } -> Cmd msg
+port saveData : { key : String, content : Encode.Value } -> Cmd msg
 
 
 port dataSaved : (String -> msg) -> Sub msg
