@@ -23,7 +23,11 @@ function getItem(key) {
 
 function setItem(key, value) {
   if (!IS_WEB_EXTENSION) {
-    localStorage.setItem(key, value);
+    if (value === null) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, value);
+    }
     return Promise.resolve(null);
   } else {
     return new Promise(function(resolve, reject) {
@@ -62,19 +66,14 @@ function createElmApp(flags) {
   });
 
   app.ports.saveData.subscribe(function(data) {
-    let promise;
-    if (data.content === null) {
-      promise = removeItem(data.key);
-    } else {
-      promise = setItem(data.key, data.content);
-    }
-    promise.then(function() {
-      app.ports.dataSaved.send(data.key);
-    })
-    .catch(function(err) {
-      console.error(err);
-      app.ports.newError.send('Nothing retrieved: ' + err.message);
-    });
+    setItem(data.key, data.content)
+      .then(function() {
+        app.ports.dataSaved.send(data.key);
+      })
+      .catch(function(err) {
+        console.error(err);
+        app.ports.newError.send('Nothing retrieved: ' + err.message);
+      });
   });
 
   app.ports.decryptData.subscribe(function(data) {
@@ -116,7 +115,9 @@ function createElmApp(flags) {
 
   app.ports.enableSync.subscribe(function(content) {
     if (!IS_WEB_EXTENSION) {
-      document.location.href = "https://kinto.dev.mozaws.net/v1/fxa-oauth/login?redirect=http://localhost:8000/%23auth=";
+      const {origin, pathname} = document.location;
+      const redirect = encodeURIComponent(`${origin}${pathname}#auth=`);
+      document.location.href = "https://kinto.dev.mozaws.net/v1/fxa-oauth/login?redirect=" + redirect;
     } else {
       getItem('fxaToken')
         .then(function(fxaToken) {
