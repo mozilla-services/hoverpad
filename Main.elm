@@ -11,6 +11,11 @@ import Process
 import Task
 
 
+kintoServer =
+    "https://kinto.dev.mozaws.net/v1/"
+
+
+
 -- Model
 
 
@@ -21,28 +26,37 @@ type alias Flags =
 
 
 type Msg
-    = NewPassphrase String
-    | UpdateContent String
-    | NewError String
-    | GetData
-    | DataRetrieved (List String)
-    | Lock
+    = NewError String
+      -- Data encryption
     | DataEncrypted String
     | DataNotEncrypted String
+      -- Data decryption
     | DataDecrypted (Maybe String)
     | DataNotDecrypted String
+      -- Data retrieval and saving
+    | NewPassphrase String
+    | UpdateContent String
+    | GetData
+    | DataRetrieved (List String)
     | DataSaved String
+      -- Pad tools
     | BlurSelection
     | ToggleReveal
       -- Used to debounce (see debounceCount)
     | TimeOut Int
-    | LockTimeOut Int
+      -- Gear menu
     | ToggleGearMenu
     | CloseGearMenu String
+      -- Locking
+    | Lock
+    | LockTimeOut Int
     | SetLockAfterSeconds (Maybe Int)
+      -- Syncing
     | EnableSyncing
     | DisableSyncing
     | FxaTokenRetrieved String
+    | DataSavedInKinto (Result Kinto.Error String)
+    | DataRetrievedFromKinto (Result Kinto.Error String)
 
 
 type alias Model =
@@ -111,13 +125,13 @@ lockOnStartup : Model -> Maybe Int -> ( Model, Cmd Msg )
 lockOnStartup model lockAfterSeconds =
     case lockAfterSeconds of
         Nothing ->
-            model ! [ getData {} ]
+            model ! [ getData {}, retrieveData model.fxaToken ]
 
         Just seconds ->
             if seconds == 0 then
                 update Lock model
             else
-                model ! [ getData {} ]
+                model ! [ getData {}, retrieveData model.fxaToken ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -127,7 +141,7 @@ update message model =
             { model | passphrase = passphrase } ! []
 
         GetData ->
-            model ! [ getData {} ]
+            model ! [ getData {}, retrieveData model.fxaToken ]
 
         DataRetrieved list ->
             case list of
@@ -141,12 +155,21 @@ update message model =
                     Debug.crash "Should never retrieve empty params."
 
         DataDecrypted data ->
-            { model
-                | loadedContent = Maybe.withDefault "Edit here" (Debug.log "new data" data)
-                , modified = False
-                , lock = False
-            }
-                ! [ startLockTimeOut model.lockAfterSeconds model.debounceCount ]
+            let
+                content =
+                    if model.loadedContent == "" || model.loadedContent == "Edit here" then
+                        Maybe.withDefault "Edit here" (Debug.log "new data" data)
+                    else if model.loadedContent == Maybe.withDefault "" (Debug.log "new data" data) then
+                        model.loadedContent
+                    else
+                        model.loadedContent ++ "<br/> ==== <br/>" ++ Maybe.withDefault "" (Debug.log "new data" data)
+            in
+                { model
+                    | loadedContent = content
+                    , modified = False
+                    , lock = False
+                }
+                    ! [ startLockTimeOut model.lockAfterSeconds model.debounceCount ]
 
         DataNotDecrypted error ->
             { model | error = (Debug.log "data not decrypted" error) } ! []
@@ -197,7 +220,7 @@ update message model =
                 model ! []
 
         DataEncrypted encrypted ->
-            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData { key = "pad", content = Encode.string encrypted } ]
+            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData { key = "pad", content = Encode.string encrypted }, uploadData model.fxaToken encrypted ]
 
         DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
@@ -229,7 +252,81 @@ update message model =
             { model | fxaToken = Nothing } ! [ saveData { key = "bearer", content = Encode.null } ]
 
         FxaTokenRetrieved token ->
-            { model | fxaToken = Just token } ! []
+            { model | fxaToken = Just token } ! [ retrieveData (Just token) ]
+
+        DataSavedInKinto result ->
+            let
+                _ =
+                    Debug.log "kinto result" result
+            in
+                model ! []
+
+        DataRetrievedFromKinto (Ok data) ->
+            model ! [ decryptData (Debug.log "data retrieved" { content = Just data, passphrase = model.passphrase }) ]
+
+        DataRetrievedFromKinto (Err (Kinto.ServerError 404 _ error)) ->
+            update (UpdateContent model.loadedContent) model
+
+        DataRetrievedFromKinto (Err error) ->
+            { model | error = (Debug.log "data not retrieved" (toString error)) } ! []
+
+
+
+-- Kinto related
+
+
+recordResource : Kinto.Resource String
+recordResource =
+    Kinto.recordResource
+        "default"
+        "hoverpad"
+        (Decode.field "content" Decode.string)
+
+
+decodeContent : Decode.Decoder String
+decodeContent =
+    (Decode.field "content" Decode.string)
+
+
+encodeContent : String -> Encode.Value
+encodeContent content =
+    Encode.object [ ( "content", Encode.string content ) ]
+
+
+uploadData : Maybe String -> String -> Cmd Msg
+uploadData fxaToken content =
+    case fxaToken of
+        Nothing ->
+            Cmd.none
+
+        Just token ->
+            let
+                data =
+                    encodeContent content
+
+                client =
+                    Kinto.client kintoServer (Kinto.Bearer token)
+            in
+                client
+                    |> Kinto.replace recordResource "hoverpad-content" data
+                    |> Kinto.send DataSavedInKinto
+
+
+retrieveData : Maybe String -> Cmd Msg
+retrieveData fxaToken =
+    case fxaToken of
+        Nothing ->
+            (Debug.log "Nothing" Cmd.none)
+
+        Just token ->
+            let
+                client =
+                    Kinto.client kintoServer (Kinto.Bearer token)
+            in
+                (Debug.log "Something" client
+                    |> Kinto.get recordResource "hoverpad-content"
+                    |> Kinto.send DataRetrievedFromKinto
+                )
 
 
 
