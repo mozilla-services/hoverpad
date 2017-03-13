@@ -69,7 +69,7 @@ function createElmApp(flags) {
       promise = setItem(data.key, data.content);
     }
     promise.then(function() {
-      app.ports.dataSaved.send("");
+      app.ports.dataSaved.send(data.key);
     })
     .catch(function(err) {
       console.error(err);
@@ -176,11 +176,12 @@ function handleMaybeInt(maybeString) {
   return maybeInt;
 }
 
-Promise.all([getItem('lockAfterSeconds'), getItem('bearer')])
+Promise.all([getItem('lockAfterSeconds'), getItem('bearer'), getItem('contentWasSynced')])
   .then(function(results) {
     console.log("Flags", results);
     const flags = {lockAfterSeconds: handleMaybeInt(results[0]),
-                   fxaToken: results[1]};
+                   fxaToken: results[1],
+                   contentWasSyncedRemotely: results[2]};
     createElmApp(flags);
   })
   .catch(function(err) {

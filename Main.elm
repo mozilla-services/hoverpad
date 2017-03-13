@@ -22,6 +22,7 @@ kintoServer =
 type alias Flags =
     { lockAfterSeconds : Maybe Int
     , fxaToken : Maybe String
+    , contentWasSyncedRemotely : Maybe String
     }
 
 
@@ -62,6 +63,7 @@ type Msg
 type alias Model =
     { lock : Bool
     , lockAfterSeconds : Maybe Int
+    , contentWasSynced : Bool
     , fxaToken : Maybe String
     , passphrase : String
     , content : String
@@ -85,10 +87,22 @@ type alias Model =
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
+        contentWasSynced =
+            case flags.contentWasSyncedRemotely of
+                Nothing ->
+                    False
+
+                Just wasSynced ->
+                    if wasSynced == "true" then
+                        True
+                    else
+                        False
+
         model =
             { lock = False
             , lockAfterSeconds = flags.lockAfterSeconds
             , fxaToken = flags.fxaToken
+            , contentWasSynced = contentWasSynced
             , passphrase = "test"
             , content = ""
             , loadedContent = ""
@@ -157,7 +171,7 @@ update message model =
         DataDecrypted data ->
             let
                 content =
-                    if model.loadedContent == "" || model.loadedContent == "Edit here" then
+                    if model.loadedContent == "" || model.loadedContent == "Edit here" || model.contentWasSynced then
                         Maybe.withDefault "Edit here" (Debug.log "new data" data)
                     else if model.loadedContent == Maybe.withDefault "" (Debug.log "new data" data) then
                         model.loadedContent
@@ -201,8 +215,16 @@ update message model =
         Lock ->
             { model | lock = True, gearMenuOpen = False, content = "", passphrase = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
 
-        DataSaved _ ->
-            { model | modified = False } ! []
+        DataSaved key ->
+            case key of
+                "pad" ->
+                    { model | modified = False } ! []
+
+                "contentWasSynced" ->
+                    { model | contentWasSynced = True } ! []
+
+                _ ->
+                    model ! []
 
         ToggleReveal ->
             { model | reveal = not model.reveal } ! []
@@ -259,7 +281,7 @@ update message model =
                 _ =
                     Debug.log "kinto result" result
             in
-                model ! []
+                model ! [ saveData { key = "contentWasSynced", content = Encode.bool True } ]
 
         DataRetrievedFromKinto (Ok data) ->
             model ! [ decryptData (Debug.log "data retrieved" { content = Just data, passphrase = model.passphrase }) ]
