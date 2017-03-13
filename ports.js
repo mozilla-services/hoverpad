@@ -62,14 +62,19 @@ function createElmApp(flags) {
   });
 
   app.ports.saveData.subscribe(function(data) {
-    setItem(data.key, data.content)
-      .then(function() {
-        app.ports.dataSaved.send("");
-      })
-      .catch(function(err) {
-        console.error(err);
-        app.ports.newError.send('Nothing retrieved: ' + err.message);
-      });
+    let promise;
+    if (data.content === null) {
+      promise = removeItem(data.key);
+    } else {
+      promise = setItem(data.key, data.content);
+    }
+    promise.then(function() {
+      app.ports.dataSaved.send("");
+    })
+    .catch(function(err) {
+      console.error(err);
+      app.ports.newError.send('Nothing retrieved: ' + err.message);
+    });
   });
 
   app.ports.decryptData.subscribe(function(data) {
