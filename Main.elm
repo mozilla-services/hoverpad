@@ -99,11 +99,11 @@ init flags =
                         False
 
         model =
-            { lock = False
+            { lock = True
             , lockAfterSeconds = flags.lockAfterSeconds
             , fxaToken = flags.fxaToken
             , contentWasSynced = contentWasSynced
-            , passphrase = "test"
+            , passphrase = ""
             , content = ""
             , loadedContent = ""
             , modified = False
@@ -137,15 +137,18 @@ startLockTimeOut lockAfterSeconds debounceCount =
 
 lockOnStartup : Model -> Maybe Int -> ( Model, Cmd Msg )
 lockOnStartup model lockAfterSeconds =
-    case lockAfterSeconds of
-        Nothing ->
-            model ! [ getData {}, retrieveData model.fxaToken ]
-
-        Just seconds ->
-            if seconds == 0 then
-                update Lock model
-            else
+    if model.lock then
+        model ! []
+    else
+        case lockAfterSeconds of
+            Nothing ->
                 model ! [ getData {}, retrieveData model.fxaToken ]
+
+            Just seconds ->
+                if seconds == 0 then
+                    update Lock model
+                else
+                    model ! [ getData {}, retrieveData model.fxaToken ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

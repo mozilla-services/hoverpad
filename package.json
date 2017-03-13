@@ -1,14 +1,14 @@
 {
   "name": "hoverpad",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Allows the user to make quick notes by clicking a button and entering text into the resulting popup. The notes are saved in storage and sync across profiles. See https://developer.mozilla.org/Add-ons/WebExtensions/Examples#hoverpad",
   "scripts": {
-    "build": "rm -fr web-ext-artifacts/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
+    "build": "rm -fr web-ext-artifacts/ www/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "format": "npm run lint -- --fix",
     "lint": "eslint .",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
-    "fx-web-ext": "npm run build && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
+    "fx-web-ext": "npm run build && rm -fr www/electron.js www/js/ && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
     "electron-packager": "electron-packager --out electron-apps/ --overwrite --platform=darwin,linux,win32 --ignore=\"(www|elm-stuff|platforms|plugins|icons)\" ./ hoverpad && cd electron-apps/ && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "publish-to-gh-pages": "npm run build && gh-pages --dist ./www",
