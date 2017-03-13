@@ -10767,8 +10767,8 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							return _elm_lang$core$Native_Utils.crashCase(
 								'Main',
 								{
-									start: {line: 161, column: 13},
-									end: {line: 169, column: 70}
+									start: {line: 164, column: 13},
+									end: {line: 172, column: 70}
 								},
 								_p7)(
 								A2(_elm_lang$core$Basics_ops['++'], 'Unsupported newData key: ', _p7._0));
@@ -10777,8 +10777,8 @@ var _mozilla_services$hoverpad$Main$update = F2(
 						return _elm_lang$core$Native_Utils.crashCase(
 							'Main',
 							{
-								start: {line: 161, column: 13},
-								end: {line: 169, column: 70}
+								start: {line: 164, column: 13},
+								end: {line: 172, column: 70}
 							},
 							_p7)('Should never retrieve empty params.');
 					}
@@ -11092,35 +11092,42 @@ var _mozilla_services$hoverpad$Main$update = F2(
 	});
 var _mozilla_services$hoverpad$Main$lockOnStartup = F2(
 	function (model, lockAfterSeconds) {
-		var _p19 = lockAfterSeconds;
-		if (_p19.ctor === 'Nothing') {
+		if (model.lock) {
 			return A2(
 				_elm_lang$core$Platform_Cmd_ops['!'],
 				model,
-				{
-					ctor: '::',
-					_0: _mozilla_services$hoverpad$Main$getData(
-						{}),
-					_1: {
-						ctor: '::',
-						_0: _mozilla_services$hoverpad$Main$retrieveData(model.fxaToken),
-						_1: {ctor: '[]'}
-					}
-				});
+				{ctor: '[]'});
 		} else {
-			return _elm_lang$core$Native_Utils.eq(_p19._0, 0) ? A2(_mozilla_services$hoverpad$Main$update, _mozilla_services$hoverpad$Main$Lock, model) : A2(
-				_elm_lang$core$Platform_Cmd_ops['!'],
-				model,
-				{
-					ctor: '::',
-					_0: _mozilla_services$hoverpad$Main$getData(
-						{}),
-					_1: {
+			var _p19 = lockAfterSeconds;
+			if (_p19.ctor === 'Nothing') {
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
 						ctor: '::',
-						_0: _mozilla_services$hoverpad$Main$retrieveData(model.fxaToken),
-						_1: {ctor: '[]'}
-					}
-				});
+						_0: _mozilla_services$hoverpad$Main$getData(
+							{}),
+						_1: {
+							ctor: '::',
+							_0: _mozilla_services$hoverpad$Main$retrieveData(model.fxaToken),
+							_1: {ctor: '[]'}
+						}
+					});
+			} else {
+				return _elm_lang$core$Native_Utils.eq(_p19._0, 0) ? A2(_mozilla_services$hoverpad$Main$update, _mozilla_services$hoverpad$Main$Lock, model) : A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					model,
+					{
+						ctor: '::',
+						_0: _mozilla_services$hoverpad$Main$getData(
+							{}),
+						_1: {
+							ctor: '::',
+							_0: _mozilla_services$hoverpad$Main$retrieveData(model.fxaToken),
+							_1: {ctor: '[]'}
+						}
+					});
+			}
 		}
 	});
 var _mozilla_services$hoverpad$Main$init = function (flags) {
@@ -11132,7 +11139,7 @@ var _mozilla_services$hoverpad$Main$init = function (flags) {
 			return _elm_lang$core$Native_Utils.eq(_p20._0, 'true') ? true : false;
 		}
 	}();
-	var model = {lock: false, lockAfterSeconds: flags.lockAfterSeconds, fxaToken: flags.fxaToken, contentWasSynced: contentWasSynced, passphrase: 'test', content: '', loadedContent: '', modified: false, error: '', reveal: false, debounceCount: 0, encryptedData: _elm_lang$core$Maybe$Nothing, gearMenuOpen: false};
+	var model = {lock: true, lockAfterSeconds: flags.lockAfterSeconds, fxaToken: flags.fxaToken, contentWasSynced: contentWasSynced, passphrase: '', content: '', loadedContent: '', modified: false, error: '', reveal: false, debounceCount: 0, encryptedData: _elm_lang$core$Maybe$Nothing, gearMenuOpen: false};
 	return A2(_mozilla_services$hoverpad$Main$lockOnStartup, model, flags.lockAfterSeconds);
 };
 var _mozilla_services$hoverpad$Main$contentEditable = function (model) {
