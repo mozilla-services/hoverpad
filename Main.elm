@@ -23,6 +23,7 @@ type alias Flags =
     { lockAfterSeconds : Maybe Int
     , fxaToken : Maybe String
     , contentWasSyncedRemotely : Maybe String
+    , passphrase : Maybe String
     }
 
 
@@ -65,7 +66,7 @@ type alias Model =
     , lockAfterSeconds : Maybe Int
     , contentWasSynced : Bool
     , fxaToken : Maybe String
-    , passphrase : String
+    , passphrase : Maybe String
     , content : String
     , loadedContent :
         -- may be desynchronized with "content", only used to redraw the
@@ -98,12 +99,20 @@ init flags =
                     else
                         False
 
+        lock =
+            case flags.passphrase of
+                Nothing ->
+                    True
+
+                Just _ ->
+                    False
+
         model =
-            { lock = True
+            { lock = lock
             , lockAfterSeconds = flags.lockAfterSeconds
             , fxaToken = flags.fxaToken
             , contentWasSynced = contentWasSynced
-            , passphrase = ""
+            , passphrase = flags.passphrase
             , content = ""
             , loadedContent = ""
             , modified = False
@@ -114,7 +123,7 @@ init flags =
             , gearMenuOpen = False
             }
     in
-        lockOnStartup model flags.lockAfterSeconds
+        lockOnStartup (Debug.log "Init" model) flags.lockAfterSeconds
 
 
 
@@ -151,19 +160,51 @@ lockOnStartup model lockAfterSeconds =
                     model ! [ getData {}, retrieveData model.fxaToken ]
 
 
+encryptIfPassphrase : Maybe String -> String -> Cmd Msg
+encryptIfPassphrase passphrase content =
+    case passphrase of
+        Nothing ->
+            Cmd.none
+
+        Just passphrase ->
+            encryptData { content = content, passphrase = passphrase }
+
+
+decryptIfPassphrase : Maybe String -> Maybe String -> Cmd Msg
+decryptIfPassphrase passphrase content =
+    case passphrase of
+        Nothing ->
+            Cmd.none
+
+        Just passphrase ->
+            decryptData { content = content, passphrase = passphrase }
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
         NewPassphrase passphrase ->
-            { model | passphrase = passphrase } ! []
+            { model
+                | passphrase =
+                    if passphrase == "" then
+                        Nothing
+                    else
+                        Just passphrase
+            }
+                ! []
 
         GetData ->
-            model ! [ getData {}, retrieveData model.fxaToken ]
+            { model | error = "" } ! [ savePassphrase model.passphrase, getData {}, retrieveData model.fxaToken ]
 
         DataRetrieved list ->
             case list of
                 [ "pad", data ] ->
-                    model ! [ decryptData (Debug.log "data retrieved" { content = Just data, passphrase = model.passphrase }) ]
+                    case model.passphrase of
+                        Nothing ->
+                            { model | error = "No passphrase to decrypt content." } ! []
+
+                        Just passphrase ->
+                            model ! [ decryptIfPassphrase model.passphrase (Just data) ]
 
                 [ key, value ] ->
                     Debug.crash ("Unsupported newData key: " ++ key)
@@ -213,10 +254,10 @@ update message model =
                       ]
 
         NewError error ->
-            { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
+            { model | lock = True, content = "", passphrase = Nothing, error = "Wrong passphrase" } ! []
 
         Lock ->
-            { model | lock = True, gearMenuOpen = False, content = "", passphrase = "", error = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
+            { model | lock = True, gearMenuOpen = False, content = "", passphrase = Nothing } ! [ dropPassphrase {}, encryptIfPassphrase model.passphrase model.content ]
 
         DataSaved key ->
             case key of
@@ -234,7 +275,7 @@ update message model =
 
         TimeOut debounceCount ->
             if debounceCount == model.debounceCount then
-                model ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
+                model ! [ encryptIfPassphrase model.passphrase model.content ]
             else
                 model ! []
 
@@ -284,10 +325,10 @@ update message model =
                 _ =
                     Debug.log "kinto result" result
             in
-                model ! [ saveData { key = "contentWasSynced", content = Encode.bool True } ]
+                model ! [ saveData { key = "contentWasSynced", content = Encode.string "true" } ]
 
         DataRetrievedFromKinto (Ok data) ->
-            model ! [ decryptData (Debug.log "data retrieved" { content = Just data, passphrase = model.passphrase }) ]
+            model ! [ decryptIfPassphrase model.passphrase (Just data) ]
 
         DataRetrievedFromKinto (Err (Kinto.ServerError 404 _ error)) ->
             update (UpdateContent model.loadedContent) model
@@ -376,7 +417,7 @@ formView model =
                 [ Html.Attributes.id "password"
                 , Html.Attributes.type_ "password"
                 , Html.Attributes.placeholder "Passphrase"
-                , Html.Attributes.value model.passphrase
+                , Html.Attributes.value (Maybe.withDefault "" model.passphrase)
                 , Html.Events.onInput NewPassphrase
                 ]
                 []
@@ -652,6 +693,12 @@ port saveData : { key : String, content : Encode.Value } -> Cmd msg
 
 
 port dataSaved : (String -> msg) -> Sub msg
+
+
+port savePassphrase : Maybe String -> Cmd msg
+
+
+port dropPassphrase : {} -> Cmd msg
 
 
 

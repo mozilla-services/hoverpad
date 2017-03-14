@@ -14,7 +14,8 @@
     "publish-to-gh-pages": "npm run build && gh-pages --dist ./www",
     "cordova-emulate-android": "npm run build && cordova emulate android",
     "cordova-android": "npm run build && cordova run android",
-    "test": "npm run lint"
+    "test": "npm run lint",
+    "web-ext-sources": "rm -fr Hoverpad-Sources.zip && zip -r Hoverpad-Sources.zip Main.elm background.js elm-package.json encryption.js index.html Makefile manifest.json package.json ports.js README.md style.css icons/"
   },
   "repository": {
     "type": "git",
