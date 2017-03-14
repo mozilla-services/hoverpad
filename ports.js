@@ -28,7 +28,7 @@ function getPassphrase() {
   if (!IS_WEB_EXTENSION) {
     const passphrase = sessionStorage.getItem("temporaryPassphrase");
     if (passphrase === null) {
-      return null;
+      return Promise.resolve(null);
     }
     return Promise.resolve(atob(passphrase));
   } else {
