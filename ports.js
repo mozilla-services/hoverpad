@@ -5,23 +5,35 @@ const CONTENT_KEY = "pad";
 const IS_WEB_EXTENSION = (typeof chrome === "object" && typeof chrome.storage === "object");
 
 function storePassphrase(passphrase) {
-  // Insecurely storing the passphrase.
-  sessionStorage.setItem("temporaryPassphrase", btoa(passphrase));
-  return Promise.resolve(null);
+  if (!IS_WEB_EXTENSION) {
+    // Insecurely storing the passphrase.
+    sessionStorage.setItem("temporaryPassphrase", btoa(passphrase));
+    return Promise.resolve(null);
+  } else {
+    return setItem("temporaryPassphrase", passphrase);
+  }
 }
 
 function dropPassphrase() {
-  sessionStorage.removeItem("temporaryPassphrase");
-  return Promise.resolve(null);
+  if (!IS_WEB_EXTENSION) {
+    sessionStorage.removeItem("temporaryPassphrase");
+    return Promise.resolve(null);
+  } else {
+    return setItem("temporaryPassphrase", null);
+  }
 }
 
 function getPassphrase() {
   // Insecurely retrieving the passphrase.
-  const passphrase = sessionStorage.getItem("temporaryPassphrase");
-  if (passphrase === null) {
-    return null;
+  if (!IS_WEB_EXTENSION) {
+    const passphrase = sessionStorage.getItem("temporaryPassphrase");
+    if (passphrase === null) {
+      return null;
+    }
+    return Promise.resolve(atob(passphrase));
+  } else {
+    return getItem("temporaryPassphrase");
   }
-  return Promise.resolve(atob(passphrase));
 }
 
 function getItem(key) {
@@ -89,9 +101,6 @@ function createElmApp(flags) {
 
   app.ports.savePassphrase.subscribe(function(passphrase) {
     storePassphrase(passphrase)
-      .then(function() {
-        console.log("Passphrase saved");
-      })
       .catch(function(err) {
         console.error(err);
         app.ports.newError.send('Could not save passphrase: ' + err.message);
@@ -100,9 +109,6 @@ function createElmApp(flags) {
 
   app.ports.dropPassphrase.subscribe(function() {
     dropPassphrase()
-      .then(function() {
-        console.log("Passphrase dropped");
-      })
       .catch(function(err) {
         console.error(err);
         app.ports.newError.send('Could not drop passphrase: ' + err.message);
@@ -155,7 +161,6 @@ function createElmApp(flags) {
       getItem('fxaToken')
         .then(function(fxaToken) {
           if (fxaToken !== null) {
-            console.log("Bearer ", fxaToken);
             app.ports.syncEnabled.send(fxaToken);
           } else {
             chrome.runtime.sendMessage({ action: 'authenticate' });
@@ -176,7 +181,6 @@ function createElmApp(flags) {
       setItem("bearer", token)
         .then(function() {
           window.location.hash = "";
-          console.log("Bearer ", token);
           app.ports.syncEnabled.send(token);
         })
         .catch(function(err) {
@@ -188,7 +192,6 @@ function createElmApp(flags) {
     chrome.runtime.onMessage.addListener(function (eventData) {
       switch (eventData.action) {
       case 'authenticated':
-        console.log("Bearer ", eventData.bearer);
         app.ports.syncEnabled.send(eventData.bearer);
         break;
       case 'error':

@@ -10267,7 +10267,9 @@ var _mozilla_services$hoverpad$Main$Model = function (a) {
 										return function (k) {
 											return function (l) {
 												return function (m) {
-													return {lock: a, lockAfterSeconds: b, contentWasSynced: c, fxaToken: d, passphrase: e, content: f, loadedContent: g, modified: h, error: i, reveal: j, debounceCount: k, encryptedData: l, gearMenuOpen: m};
+													return function (n) {
+														return {lock: a, fromKinto: b, lockAfterSeconds: c, contentWasSynced: d, fxaToken: e, passphrase: f, content: g, loadedContent: h, modified: i, error: j, reveal: k, debounceCount: l, encryptedData: m, gearMenuOpen: n};
+													};
 												};
 											};
 										};
@@ -10812,8 +10814,8 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							return _elm_lang$core$Native_Utils.crashCase(
 								'Main',
 								{
-									start: {line: 200, column: 13},
-									end: {line: 213, column: 70}
+									start: {line: 202, column: 13},
+									end: {line: 215, column: 70}
 								},
 								_p10)(
 								A2(_elm_lang$core$Basics_ops['++'], 'Unsupported newData key: ', _p10._0));
@@ -10822,8 +10824,8 @@ var _mozilla_services$hoverpad$Main$update = F2(
 						return _elm_lang$core$Native_Utils.crashCase(
 							'Main',
 							{
-								start: {line: 200, column: 13},
-								end: {line: 213, column: 70}
+								start: {line: 202, column: 13},
+								end: {line: 215, column: 70}
 							},
 							_p10)('Should never retrieve empty params.');
 					}
@@ -10847,16 +10849,27 @@ var _mozilla_services$hoverpad$Main$update = F2(
 								_elm_lang$core$Maybe$withDefault,
 								'',
 								A2(_elm_lang$core$Debug$log, 'new data', _p14)))));
+					var commands = (model.fromKinto && _elm_lang$core$Native_Utils.eq(
+						model.loadedContent,
+						A2(_elm_lang$core$Maybe$withDefault, '', _p14))) ? {
+						ctor: '::',
+						_0: A2(_mozilla_services$hoverpad$Main$encryptIfPassphrase, model.passphrase, content),
+						_1: {
+							ctor: '::',
+							_0: A2(_mozilla_services$hoverpad$Main$startLockTimeOut, model.lockAfterSeconds, model.debounceCount),
+							_1: {ctor: '[]'}
+						}
+					} : {
+						ctor: '::',
+						_0: A2(_mozilla_services$hoverpad$Main$startLockTimeOut, model.lockAfterSeconds, model.debounceCount),
+						_1: {ctor: '[]'}
+					};
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{loadedContent: content, modified: false, lock: false}),
-						{
-							ctor: '::',
-							_0: A2(_mozilla_services$hoverpad$Main$startLockTimeOut, model.lockAfterSeconds, model.debounceCount),
-							_1: {ctor: '[]'}
-						});
+							{loadedContent: content, modified: model.fromKinto, lock: false, fromKinto: false}),
+						commands);
 				case 'DataNotDecrypted':
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
@@ -11038,7 +11051,8 @@ var _mozilla_services$hoverpad$Main$update = F2(
 									content: function () {
 										var _p19 = _p20;
 										if (_p19.ctor === 'Just') {
-											return _elm_lang$core$Json_Encode$int(_p19._0);
+											return _elm_lang$core$Json_Encode$string(
+												_elm_lang$core$Basics$toString(_p19._0));
 										} else {
 											return _elm_lang$core$Json_Encode$null;
 										}
@@ -11101,7 +11115,9 @@ var _mozilla_services$hoverpad$Main$update = F2(
 					if (_p8._0.ctor === 'Ok') {
 						return A2(
 							_elm_lang$core$Platform_Cmd_ops['!'],
-							model,
+							_elm_lang$core$Native_Utils.update(
+								model,
+								{fromKinto: true}),
 							{
 								ctor: '::',
 								_0: A2(
@@ -11191,7 +11207,7 @@ var _mozilla_services$hoverpad$Main$init = function (flags) {
 			return _elm_lang$core$Native_Utils.eq(_p25._0, 'true') ? true : false;
 		}
 	}();
-	var model = {lock: lock, lockAfterSeconds: flags.lockAfterSeconds, fxaToken: flags.fxaToken, contentWasSynced: contentWasSynced, passphrase: flags.passphrase, content: '', loadedContent: '', modified: false, error: '', reveal: false, debounceCount: 0, encryptedData: _elm_lang$core$Maybe$Nothing, gearMenuOpen: false};
+	var model = {lock: lock, fromKinto: false, lockAfterSeconds: flags.lockAfterSeconds, fxaToken: flags.fxaToken, contentWasSynced: contentWasSynced, passphrase: flags.passphrase, content: '', loadedContent: '', modified: false, error: '', reveal: false, debounceCount: 0, encryptedData: _elm_lang$core$Maybe$Nothing, gearMenuOpen: false};
 	return A2(
 		_mozilla_services$hoverpad$Main$lockOnStartup,
 		A2(_elm_lang$core$Debug$log, 'Init', model),
