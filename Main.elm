@@ -216,7 +216,7 @@ update message model =
             { model | lock = True, content = "", passphrase = "", error = "Wrong passphrase" } ! []
 
         Lock ->
-            { model | lock = True, gearMenuOpen = False, content = "", passphrase = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
+            { model | lock = True, gearMenuOpen = False, content = "", passphrase = "", error = "" } ! [ encryptData { content = model.content, passphrase = model.passphrase } ]
 
         DataSaved key ->
             case key of
