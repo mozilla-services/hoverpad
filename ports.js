@@ -5,23 +5,35 @@ const CONTENT_KEY = "pad";
 const IS_WEB_EXTENSION = (typeof chrome === "object" && typeof chrome.storage === "object");
 
 function storePassphrase(passphrase) {
-  // Insecurely storing the passphrase.
-  sessionStorage.setItem("temporaryPassphrase", btoa(passphrase));
-  return Promise.resolve(null);
+  if (!IS_WEB_EXTENSION) {
+    // Insecurely storing the passphrase.
+    sessionStorage.setItem("temporaryPassphrase", btoa(passphrase));
+    return Promise.resolve(null);
+  } else {
+    return setItem("temporaryPassphrase", passphrase);
+  }
 }
 
 function dropPassphrase() {
-  sessionStorage.removeItem("temporaryPassphrase");
-  return Promise.resolve(null);
+  if (!IS_WEB_EXTENSION) {
+    sessionStorage.removeItem("temporaryPassphrase");
+    return Promise.resolve(null);
+  } else {
+    return setItem("temporaryPassphrase", null);
+  }
 }
 
 function getPassphrase() {
   // Insecurely retrieving the passphrase.
-  const passphrase = sessionStorage.getItem("temporaryPassphrase");
-  if (passphrase === null) {
-    return null;
+  if (!IS_WEB_EXTENSION) {
+    const passphrase = sessionStorage.getItem("temporaryPassphrase");
+    if (passphrase === null) {
+      return null;
+    }
+    return Promise.resolve(atob(passphrase));
+  } else {
+    return getItem("temporaryPassphrase");
   }
-  return Promise.resolve(atob(passphrase));
 }
 
 function getItem(key) {
