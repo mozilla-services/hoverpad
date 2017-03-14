@@ -63,6 +63,7 @@ type Msg
 
 type alias Model =
     { lock : Bool
+    , fromKinto : Bool
     , lockAfterSeconds : Maybe Int
     , contentWasSynced : Bool
     , fxaToken : Maybe String
@@ -109,6 +110,7 @@ init flags =
 
         model =
             { lock = lock
+            , fromKinto = False
             , lockAfterSeconds = flags.lockAfterSeconds
             , fxaToken = flags.fxaToken
             , contentWasSynced = contentWasSynced
@@ -221,13 +223,22 @@ update message model =
                         model.loadedContent
                     else
                         model.loadedContent ++ "<br/> ==== <br/>" ++ Maybe.withDefault "" (Debug.log "new data" data)
+
+                commands =
+                    if model.fromKinto && model.loadedContent == Maybe.withDefault "" data then
+                        [ encryptIfPassphrase model.passphrase content
+                        , startLockTimeOut model.lockAfterSeconds model.debounceCount
+                        ]
+                    else
+                        [ startLockTimeOut model.lockAfterSeconds model.debounceCount ]
             in
                 { model
                     | loadedContent = content
-                    , modified = False
+                    , modified = model.fromKinto
                     , lock = False
+                    , fromKinto = False
                 }
-                    ! [ startLockTimeOut model.lockAfterSeconds model.debounceCount ]
+                    ! commands
 
         DataNotDecrypted error ->
             { model | error = (Debug.log "data not decrypted" error) } ! []
@@ -304,7 +315,7 @@ update message model =
                         , content =
                             case lockAfterSeconds of
                                 Just val ->
-                                    Encode.int val
+                                    Encode.string (toString val)
 
                                 Nothing ->
                                     Encode.null
@@ -328,7 +339,7 @@ update message model =
                 model ! [ saveData { key = "contentWasSynced", content = Encode.string "true" } ]
 
         DataRetrievedFromKinto (Ok data) ->
-            model ! [ decryptIfPassphrase model.passphrase (Just data) ]
+            { model | fromKinto = True } ! [ decryptIfPassphrase model.passphrase (Just data) ]
 
         DataRetrievedFromKinto (Err (Kinto.ServerError 404 _ error)) ->
             update (UpdateContent model.loadedContent) model
