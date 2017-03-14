@@ -85,13 +85,11 @@ function encrypt(passphrase, content) {
         new Uint8Array(encryptedData)
       );
       const encrypted = arrayBufferToBase64(encryptedContent);
-      console.log(encrypted);
       return encrypted;
     });
 }
 
 function separateIvFromData(buf) {
-  console.log(buf, buf.length, ivLen);
   const iv = new Uint8Array(ivLen);
   const data = new Uint8Array(buf.length - ivLen);
 
@@ -102,7 +100,6 @@ function separateIvFromData(buf) {
       data[i - ivLen] = byte;
     }
   });
-  console.log(iv, data);
   return { iv, data };
 }
 

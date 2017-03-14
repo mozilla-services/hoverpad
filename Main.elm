@@ -218,11 +218,11 @@ update message model =
             let
                 content =
                     if model.loadedContent == "" || model.loadedContent == "Edit here" || model.contentWasSynced then
-                        Maybe.withDefault "Edit here" (Debug.log "new data" data)
-                    else if model.loadedContent == Maybe.withDefault "" (Debug.log "new data" data) then
+                        Maybe.withDefault "Edit here" data
+                    else if model.loadedContent == Maybe.withDefault "" data then
                         model.loadedContent
                     else
-                        model.loadedContent ++ "<br/> ==== <br/>" ++ Maybe.withDefault "" (Debug.log "new data" data)
+                        model.loadedContent ++ "<br/> ==== <br/>" ++ Maybe.withDefault "" data
 
                 commands =
                     if model.fromKinto && model.loadedContent == Maybe.withDefault "" data then
@@ -248,9 +248,6 @@ update message model =
 
         UpdateContent content ->
             let
-                _ =
-                    Debug.log "updated content" content
-
                 debounceCount =
                     model.debounceCount + 1
             in
@@ -265,10 +262,24 @@ update message model =
                       ]
 
         NewError error ->
-            { model | lock = True, content = "", passphrase = Nothing, error = "Wrong passphrase" } ! []
+            { model
+                | lock = True
+                , content = ""
+                , passphrase = Nothing
+                , error = "Wrong passphrase"
+            }
+                ! []
 
         Lock ->
-            { model | lock = True, gearMenuOpen = False, content = "", passphrase = Nothing } ! [ dropPassphrase {}, encryptIfPassphrase model.passphrase model.content ]
+            { model
+                | lock = True
+                , gearMenuOpen = False
+                , content = ""
+                , passphrase = Nothing
+            }
+                ! [ dropPassphrase {}
+                  , encryptIfPassphrase model.passphrase model.content
+                  ]
 
         DataSaved key ->
             case key of
@@ -297,7 +308,10 @@ update message model =
                 model ! []
 
         DataEncrypted encrypted ->
-            { model | encryptedData = Debug.log "encrypted data from js" <| Just encrypted } ! [ saveData { key = "pad", content = Encode.string encrypted }, uploadData model.fxaToken encrypted ]
+            { model | encryptedData = Just encrypted }
+                ! [ saveData { key = "pad", content = Encode.string encrypted }
+                  , uploadData model.fxaToken encrypted
+                  ]
 
         DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
@@ -332,11 +346,7 @@ update message model =
             { model | fxaToken = Just token } ! [ retrieveData (Just token) ]
 
         DataSavedInKinto result ->
-            let
-                _ =
-                    Debug.log "kinto result" result
-            in
-                model ! [ saveData { key = "contentWasSynced", content = Encode.string "true" } ]
+            model ! [ saveData { key = "contentWasSynced", content = Encode.string "true" } ]
 
         DataRetrievedFromKinto (Ok data) ->
             { model | fromKinto = True } ! [ decryptIfPassphrase model.passphrase (Just data) ]
@@ -393,17 +403,16 @@ retrieveData : Maybe String -> Cmd Msg
 retrieveData fxaToken =
     case fxaToken of
         Nothing ->
-            (Debug.log "Nothing" Cmd.none)
+            Cmd.none
 
         Just token ->
             let
                 client =
                     Kinto.client kintoServer (Kinto.Bearer token)
             in
-                (Debug.log "Something" client
+                client
                     |> Kinto.get recordResource "hoverpad-content"
                     |> Kinto.send DataRetrievedFromKinto
-                )
 
 
 

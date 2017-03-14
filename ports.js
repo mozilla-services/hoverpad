@@ -101,9 +101,6 @@ function createElmApp(flags) {
 
   app.ports.savePassphrase.subscribe(function(passphrase) {
     storePassphrase(passphrase)
-      .then(function() {
-        console.log("Passphrase saved");
-      })
       .catch(function(err) {
         console.error(err);
         app.ports.newError.send('Could not save passphrase: ' + err.message);
@@ -112,9 +109,6 @@ function createElmApp(flags) {
 
   app.ports.dropPassphrase.subscribe(function() {
     dropPassphrase()
-      .then(function() {
-        console.log("Passphrase dropped");
-      })
       .catch(function(err) {
         console.error(err);
         app.ports.newError.send('Could not drop passphrase: ' + err.message);
@@ -167,7 +161,6 @@ function createElmApp(flags) {
       getItem('fxaToken')
         .then(function(fxaToken) {
           if (fxaToken !== null) {
-            console.log("Bearer ", fxaToken);
             app.ports.syncEnabled.send(fxaToken);
           } else {
             chrome.runtime.sendMessage({ action: 'authenticate' });
@@ -188,7 +181,6 @@ function createElmApp(flags) {
       setItem("bearer", token)
         .then(function() {
           window.location.hash = "";
-          console.log("Bearer ", token);
           app.ports.syncEnabled.send(token);
         })
         .catch(function(err) {
@@ -200,7 +192,6 @@ function createElmApp(flags) {
     chrome.runtime.onMessage.addListener(function (eventData) {
       switch (eventData.action) {
       case 'authenticated':
-        console.log("Bearer ", eventData.bearer);
         app.ports.syncEnabled.send(eventData.bearer);
         break;
       case 'error':
