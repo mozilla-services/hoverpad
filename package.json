@@ -1,6 +1,6 @@
 {
   "name": "hoverpad",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Allows the user to make quick notes by clicking a button and entering text into the resulting popup. The notes are saved in storage and sync across profiles. See https://developer.mozilla.org/Add-ons/WebExtensions/Examples#hoverpad",
   "scripts": {
     "build": "rm -fr web-ext-artifacts/ www/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",

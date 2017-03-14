@@ -123,7 +123,7 @@ init flags =
             , gearMenuOpen = False
             }
     in
-        lockOnStartup (Debug.log "Init" model) flags.lockAfterSeconds
+        lockOnStartup model flags.lockAfterSeconds
 
 
 
