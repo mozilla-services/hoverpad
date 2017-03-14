@@ -18,7 +18,7 @@ function tabCallback(tabId, changeInfo, updatedTab) {
 
 function handleAuthentication() {
   browser.tabs.create({ 'url': authenticateURL }, function () {
-	browser.tabs.onUpdated.addListener(tabCallback);
+    browser.tabs.onUpdated.addListener(tabCallback);
   });
 }
 
