@@ -10175,6 +10175,16 @@ var _mozilla_services$hoverpad$Main$saveData = _elm_lang$core$Native_Platform.ou
 		return {key: v.key, content: v.content};
 	});
 var _mozilla_services$hoverpad$Main$dataSaved = _elm_lang$core$Native_Platform.incomingPort('dataSaved', _elm_lang$core$Json_Decode$string);
+var _mozilla_services$hoverpad$Main$savePassphrase = _elm_lang$core$Native_Platform.outgoingPort(
+	'savePassphrase',
+	function (v) {
+		return (v.ctor === 'Nothing') ? null : v._0;
+	});
+var _mozilla_services$hoverpad$Main$dropPassphrase = _elm_lang$core$Native_Platform.outgoingPort(
+	'dropPassphrase',
+	function (v) {
+		return {};
+	});
 var _mozilla_services$hoverpad$Main$decryptData = _elm_lang$core$Native_Platform.outgoingPort(
 	'decryptData',
 	function (v) {
@@ -10182,6 +10192,16 @@ var _mozilla_services$hoverpad$Main$decryptData = _elm_lang$core$Native_Platform
 			content: (v.content.ctor === 'Nothing') ? null : v.content._0,
 			passphrase: v.passphrase
 		};
+	});
+var _mozilla_services$hoverpad$Main$decryptIfPassphrase = F2(
+	function (passphrase, content) {
+		var _p0 = passphrase;
+		if (_p0.ctor === 'Nothing') {
+			return _elm_lang$core$Platform_Cmd$none;
+		} else {
+			return _mozilla_services$hoverpad$Main$decryptData(
+				{content: content, passphrase: _p0._0});
+		}
 	});
 var _mozilla_services$hoverpad$Main$dataDecrypted = _elm_lang$core$Native_Platform.incomingPort(
 	'dataDecrypted',
@@ -10202,6 +10222,16 @@ var _mozilla_services$hoverpad$Main$encryptData = _elm_lang$core$Native_Platform
 	function (v) {
 		return {content: v.content, passphrase: v.passphrase};
 	});
+var _mozilla_services$hoverpad$Main$encryptIfPassphrase = F2(
+	function (passphrase, content) {
+		var _p1 = passphrase;
+		if (_p1.ctor === 'Nothing') {
+			return _elm_lang$core$Platform_Cmd$none;
+		} else {
+			return _mozilla_services$hoverpad$Main$encryptData(
+				{content: content, passphrase: _p1._0});
+		}
+	});
 var _mozilla_services$hoverpad$Main$dataEncrypted = _elm_lang$core$Native_Platform.incomingPort('dataEncrypted', _elm_lang$core$Json_Decode$string);
 var _mozilla_services$hoverpad$Main$dataNotEncrypted = _elm_lang$core$Native_Platform.incomingPort('dataNotEncrypted', _elm_lang$core$Json_Decode$string);
 var _mozilla_services$hoverpad$Main$enableSync = _elm_lang$core$Native_Platform.outgoingPort(
@@ -10220,9 +10250,9 @@ var _mozilla_services$hoverpad$Main$copySelection = _elm_lang$core$Native_Platfo
 	function (v) {
 		return v;
 	});
-var _mozilla_services$hoverpad$Main$Flags = F3(
-	function (a, b, c) {
-		return {lockAfterSeconds: a, fxaToken: b, contentWasSyncedRemotely: c};
+var _mozilla_services$hoverpad$Main$Flags = F4(
+	function (a, b, c, d) {
+		return {lockAfterSeconds: a, fxaToken: b, contentWasSyncedRemotely: c, passphrase: d};
 	});
 var _mozilla_services$hoverpad$Main$Model = function (a) {
 	return function (b) {
@@ -10255,14 +10285,14 @@ var _mozilla_services$hoverpad$Main$DataRetrievedFromKinto = function (a) {
 	return {ctor: 'DataRetrievedFromKinto', _0: a};
 };
 var _mozilla_services$hoverpad$Main$retrieveData = function (fxaToken) {
-	var _p0 = fxaToken;
-	if (_p0.ctor === 'Nothing') {
+	var _p2 = fxaToken;
+	if (_p2.ctor === 'Nothing') {
 		return A2(_elm_lang$core$Debug$log, 'Nothing', _elm_lang$core$Platform_Cmd$none);
 	} else {
 		var client = A2(
 			_Kinto$elm_kinto$Kinto$client,
 			_mozilla_services$hoverpad$Main$kintoServer,
-			_Kinto$elm_kinto$Kinto$Bearer(_p0._0));
+			_Kinto$elm_kinto$Kinto$Bearer(_p2._0));
 		return A2(
 			_Kinto$elm_kinto$Kinto$send,
 			_mozilla_services$hoverpad$Main$DataRetrievedFromKinto,
@@ -10278,14 +10308,14 @@ var _mozilla_services$hoverpad$Main$DataSavedInKinto = function (a) {
 };
 var _mozilla_services$hoverpad$Main$uploadData = F2(
 	function (fxaToken, content) {
-		var _p1 = fxaToken;
-		if (_p1.ctor === 'Nothing') {
+		var _p3 = fxaToken;
+		if (_p3.ctor === 'Nothing') {
 			return _elm_lang$core$Platform_Cmd$none;
 		} else {
 			var client = A2(
 				_Kinto$elm_kinto$Kinto$client,
 				_mozilla_services$hoverpad$Main$kintoServer,
-				_Kinto$elm_kinto$Kinto$Bearer(_p1._0));
+				_Kinto$elm_kinto$Kinto$Bearer(_p3._0));
 			var data = _mozilla_services$hoverpad$Main$encodeContent(content);
 			return A2(
 				_Kinto$elm_kinto$Kinto$send,
@@ -10299,16 +10329,16 @@ var _mozilla_services$hoverpad$Main$FxaTokenRetrieved = function (a) {
 var _mozilla_services$hoverpad$Main$DisableSyncing = {ctor: 'DisableSyncing'};
 var _mozilla_services$hoverpad$Main$EnableSyncing = {ctor: 'EnableSyncing'};
 var _mozilla_services$hoverpad$Main$syncMenuEntry = function (model) {
-	var _p2 = function () {
-		var _p3 = model.fxaToken;
-		if (_p3.ctor === 'Nothing') {
+	var _p4 = function () {
+		var _p5 = model.fxaToken;
+		if (_p5.ctor === 'Nothing') {
 			return {ctor: '_Tuple2', _0: 'Enable sync', _1: _mozilla_services$hoverpad$Main$EnableSyncing};
 		} else {
 			return {ctor: '_Tuple2', _0: 'Disable sync', _1: _mozilla_services$hoverpad$Main$DisableSyncing};
 		}
 	}();
-	var label = _p2._0;
-	var eventName = _p2._1;
+	var label = _p4._0;
+	var eventName = _p4._1;
 	return A2(
 		_elm_lang$html$Html$li,
 		{ctor: '[]'},
@@ -10399,17 +10429,17 @@ var _mozilla_services$hoverpad$Main$LockTimeOut = function (a) {
 };
 var _mozilla_services$hoverpad$Main$startLockTimeOut = F2(
 	function (lockAfterSeconds, debounceCount) {
-		var _p4 = lockAfterSeconds;
-		if (_p4.ctor === 'Nothing') {
+		var _p6 = lockAfterSeconds;
+		if (_p6.ctor === 'Nothing') {
 			return _elm_lang$core$Platform_Cmd$none;
 		} else {
-			var _p5 = _p4._0;
-			return (!_elm_lang$core$Native_Utils.eq(_p5, 0)) ? A2(
+			var _p7 = _p6._0;
+			return (!_elm_lang$core$Native_Utils.eq(_p7, 0)) ? A2(
 				_elm_lang$core$Task$perform,
 				_elm_lang$core$Basics$always(
 					_mozilla_services$hoverpad$Main$LockTimeOut(debounceCount)),
 				_elm_lang$core$Process$sleep(
-					_elm_lang$core$Time$second * _elm_lang$core$Basics$toFloat(_p5))) : _elm_lang$core$Platform_Cmd$none;
+					_elm_lang$core$Time$second * _elm_lang$core$Basics$toFloat(_p7))) : _elm_lang$core$Platform_Cmd$none;
 		}
 	});
 var _mozilla_services$hoverpad$Main$Lock = {ctor: 'Lock'};
@@ -10721,78 +10751,93 @@ var _mozilla_services$hoverpad$Main$update = F2(
 	function (message, model) {
 		update:
 		while (true) {
-			var _p6 = message;
-			switch (_p6.ctor) {
+			var _p8 = message;
+			switch (_p8.ctor) {
 				case 'NewPassphrase':
+					var _p9 = _p8._0;
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{passphrase: _p6._0}),
+							{
+								passphrase: _elm_lang$core$Native_Utils.eq(_p9, '') ? _elm_lang$core$Maybe$Nothing : _elm_lang$core$Maybe$Just(_p9)
+							}),
 						{ctor: '[]'});
 				case 'GetData':
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
-						model,
+						_elm_lang$core$Native_Utils.update(
+							model,
+							{error: ''}),
 						{
 							ctor: '::',
-							_0: _mozilla_services$hoverpad$Main$getData(
-								{}),
+							_0: _mozilla_services$hoverpad$Main$savePassphrase(model.passphrase),
 							_1: {
 								ctor: '::',
-								_0: _mozilla_services$hoverpad$Main$retrieveData(model.fxaToken),
-								_1: {ctor: '[]'}
+								_0: _mozilla_services$hoverpad$Main$getData(
+									{}),
+								_1: {
+									ctor: '::',
+									_0: _mozilla_services$hoverpad$Main$retrieveData(model.fxaToken),
+									_1: {ctor: '[]'}
+								}
 							}
 						});
 				case 'DataRetrieved':
-					var _p7 = _p6._0;
-					if (((_p7.ctor === '::') && (_p7._1.ctor === '::')) && (_p7._1._1.ctor === '[]')) {
-						if (_p7._0 === 'pad') {
-							return A2(
-								_elm_lang$core$Platform_Cmd_ops['!'],
-								model,
-								{
-									ctor: '::',
-									_0: _mozilla_services$hoverpad$Main$decryptData(
-										A2(
-											_elm_lang$core$Debug$log,
-											'data retrieved',
-											{
-												content: _elm_lang$core$Maybe$Just(_p7._1._0),
-												passphrase: model.passphrase
-											})),
-									_1: {ctor: '[]'}
-								});
+					var _p10 = _p8._0;
+					if (((_p10.ctor === '::') && (_p10._1.ctor === '::')) && (_p10._1._1.ctor === '[]')) {
+						if (_p10._0 === 'pad') {
+							var _p11 = model.passphrase;
+							if (_p11.ctor === 'Nothing') {
+								return A2(
+									_elm_lang$core$Platform_Cmd_ops['!'],
+									_elm_lang$core$Native_Utils.update(
+										model,
+										{error: 'No passphrase to decrypt content.'}),
+									{ctor: '[]'});
+							} else {
+								return A2(
+									_elm_lang$core$Platform_Cmd_ops['!'],
+									model,
+									{
+										ctor: '::',
+										_0: A2(
+											_mozilla_services$hoverpad$Main$decryptIfPassphrase,
+											model.passphrase,
+											_elm_lang$core$Maybe$Just(_p10._1._0)),
+										_1: {ctor: '[]'}
+									});
+							}
 						} else {
 							return _elm_lang$core$Native_Utils.crashCase(
 								'Main',
 								{
-									start: {line: 164, column: 13},
-									end: {line: 172, column: 70}
+									start: {line: 200, column: 13},
+									end: {line: 213, column: 70}
 								},
-								_p7)(
-								A2(_elm_lang$core$Basics_ops['++'], 'Unsupported newData key: ', _p7._0));
+								_p10)(
+								A2(_elm_lang$core$Basics_ops['++'], 'Unsupported newData key: ', _p10._0));
 						}
 					} else {
 						return _elm_lang$core$Native_Utils.crashCase(
 							'Main',
 							{
-								start: {line: 164, column: 13},
-								end: {line: 172, column: 70}
+								start: {line: 200, column: 13},
+								end: {line: 213, column: 70}
 							},
-							_p7)('Should never retrieve empty params.');
+							_p10)('Should never retrieve empty params.');
 					}
 				case 'DataDecrypted':
-					var _p10 = _p6._0;
+					var _p14 = _p8._0;
 					var content = (_elm_lang$core$Native_Utils.eq(model.loadedContent, '') || (_elm_lang$core$Native_Utils.eq(model.loadedContent, 'Edit here') || model.contentWasSynced)) ? A2(
 						_elm_lang$core$Maybe$withDefault,
 						'Edit here',
-						A2(_elm_lang$core$Debug$log, 'new data', _p10)) : (_elm_lang$core$Native_Utils.eq(
+						A2(_elm_lang$core$Debug$log, 'new data', _p14)) : (_elm_lang$core$Native_Utils.eq(
 						model.loadedContent,
 						A2(
 							_elm_lang$core$Maybe$withDefault,
 							'',
-							A2(_elm_lang$core$Debug$log, 'new data', _p10))) ? model.loadedContent : A2(
+							A2(_elm_lang$core$Debug$log, 'new data', _p14))) ? model.loadedContent : A2(
 						_elm_lang$core$Basics_ops['++'],
 						model.loadedContent,
 						A2(
@@ -10801,7 +10846,7 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							A2(
 								_elm_lang$core$Maybe$withDefault,
 								'',
-								A2(_elm_lang$core$Debug$log, 'new data', _p10)))));
+								A2(_elm_lang$core$Debug$log, 'new data', _p14)))));
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
@@ -10818,7 +10863,7 @@ var _mozilla_services$hoverpad$Main$update = F2(
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{
-								error: A2(_elm_lang$core$Debug$log, 'data not decrypted', _p6._0)
+								error: A2(_elm_lang$core$Debug$log, 'data not decrypted', _p8._0)
 							}),
 						{ctor: '[]'});
 				case 'BlurSelection':
@@ -10831,14 +10876,14 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							_1: {ctor: '[]'}
 						});
 				case 'UpdateContent':
-					var _p12 = _p6._0;
+					var _p16 = _p8._0;
 					var debounceCount = model.debounceCount + 1;
-					var _p11 = A2(_elm_lang$core$Debug$log, 'updated content', _p12);
+					var _p15 = A2(_elm_lang$core$Debug$log, 'updated content', _p16);
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{content: _p12, modified: true, debounceCount: debounceCount, lock: false}),
+							{content: _p16, modified: true, debounceCount: debounceCount, lock: false}),
 						{
 							ctor: '::',
 							_0: A2(
@@ -10857,23 +10902,27 @@ var _mozilla_services$hoverpad$Main$update = F2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{lock: true, content: '', passphrase: '', error: 'Wrong passphrase'}),
+							{lock: true, content: '', passphrase: _elm_lang$core$Maybe$Nothing, error: 'Wrong passphrase'}),
 						{ctor: '[]'});
 				case 'Lock':
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{lock: true, gearMenuOpen: false, content: '', passphrase: ''}),
+							{lock: true, gearMenuOpen: false, content: '', passphrase: _elm_lang$core$Maybe$Nothing}),
 						{
 							ctor: '::',
-							_0: _mozilla_services$hoverpad$Main$encryptData(
-								{content: model.content, passphrase: model.passphrase}),
-							_1: {ctor: '[]'}
+							_0: _mozilla_services$hoverpad$Main$dropPassphrase(
+								{}),
+							_1: {
+								ctor: '::',
+								_0: A2(_mozilla_services$hoverpad$Main$encryptIfPassphrase, model.passphrase, model.content),
+								_1: {ctor: '[]'}
+							}
 						});
 				case 'DataSaved':
-					var _p13 = _p6._0;
-					switch (_p13) {
+					var _p17 = _p8._0;
+					switch (_p17) {
 						case 'pad':
 							return A2(
 								_elm_lang$core$Platform_Cmd_ops['!'],
@@ -10902,24 +10951,23 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							{reveal: !model.reveal}),
 						{ctor: '[]'});
 				case 'TimeOut':
-					return _elm_lang$core$Native_Utils.eq(_p6._0, model.debounceCount) ? A2(
+					return _elm_lang$core$Native_Utils.eq(_p8._0, model.debounceCount) ? A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						model,
 						{
 							ctor: '::',
-							_0: _mozilla_services$hoverpad$Main$encryptData(
-								{content: model.content, passphrase: model.passphrase}),
+							_0: A2(_mozilla_services$hoverpad$Main$encryptIfPassphrase, model.passphrase, model.content),
 							_1: {ctor: '[]'}
 						}) : A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						model,
 						{ctor: '[]'});
 				case 'LockTimeOut':
-					if (_elm_lang$core$Native_Utils.eq(_p6._0, model.debounceCount)) {
-						var _v7 = _mozilla_services$hoverpad$Main$Lock,
-							_v8 = model;
-						message = _v7;
-						model = _v8;
+					if (_elm_lang$core$Native_Utils.eq(_p8._0, model.debounceCount)) {
+						var _v10 = _mozilla_services$hoverpad$Main$Lock,
+							_v11 = model;
+						message = _v10;
+						model = _v11;
 						continue update;
 					} else {
 						return A2(
@@ -10928,7 +10976,7 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							{ctor: '[]'});
 					}
 				case 'DataEncrypted':
-					var _p14 = _p6._0;
+					var _p18 = _p8._0;
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
@@ -10937,18 +10985,18 @@ var _mozilla_services$hoverpad$Main$update = F2(
 								encryptedData: A2(
 									_elm_lang$core$Debug$log,
 									'encrypted data from js',
-									_elm_lang$core$Maybe$Just(_p14))
+									_elm_lang$core$Maybe$Just(_p18))
 							}),
 						{
 							ctor: '::',
 							_0: _mozilla_services$hoverpad$Main$saveData(
 								{
 									key: 'pad',
-									content: _elm_lang$core$Json_Encode$string(_p14)
+									content: _elm_lang$core$Json_Encode$string(_p18)
 								}),
 							_1: {
 								ctor: '::',
-								_0: A2(_mozilla_services$hoverpad$Main$uploadData, model.fxaToken, _p14),
+								_0: A2(_mozilla_services$hoverpad$Main$uploadData, model.fxaToken, _p18),
 								_1: {ctor: '[]'}
 							}
 						});
@@ -10958,7 +11006,7 @@ var _mozilla_services$hoverpad$Main$update = F2(
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{
-								error: A2(_elm_lang$core$Debug$log, '', _p6._0)
+								error: A2(_elm_lang$core$Debug$log, '', _p8._0)
 							}),
 						{ctor: '[]'});
 				case 'ToggleGearMenu':
@@ -10976,21 +11024,21 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							{gearMenuOpen: false}),
 						{ctor: '[]'});
 				case 'SetLockAfterSeconds':
-					var _p16 = _p6._0;
+					var _p20 = _p8._0;
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
-							{lockAfterSeconds: _p16}),
+							{lockAfterSeconds: _p20}),
 						{
 							ctor: '::',
 							_0: _mozilla_services$hoverpad$Main$saveData(
 								{
 									key: 'lockAfterSeconds',
 									content: function () {
-										var _p15 = _p16;
-										if (_p15.ctor === 'Just') {
-											return _elm_lang$core$Json_Encode$int(_p15._0);
+										var _p19 = _p20;
+										if (_p19.ctor === 'Just') {
+											return _elm_lang$core$Json_Encode$int(_p19._0);
 										} else {
 											return _elm_lang$core$Json_Encode$null;
 										}
@@ -11021,22 +11069,22 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							_1: {ctor: '[]'}
 						});
 				case 'FxaTokenRetrieved':
-					var _p17 = _p6._0;
+					var _p21 = _p8._0;
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						_elm_lang$core$Native_Utils.update(
 							model,
 							{
-								fxaToken: _elm_lang$core$Maybe$Just(_p17)
+								fxaToken: _elm_lang$core$Maybe$Just(_p21)
 							}),
 						{
 							ctor: '::',
 							_0: _mozilla_services$hoverpad$Main$retrieveData(
-								_elm_lang$core$Maybe$Just(_p17)),
+								_elm_lang$core$Maybe$Just(_p21)),
 							_1: {ctor: '[]'}
 						});
 				case 'DataSavedInKinto':
-					var _p18 = A2(_elm_lang$core$Debug$log, 'kinto result', _p6._0);
+					var _p22 = A2(_elm_lang$core$Debug$log, 'kinto result', _p8._0);
 					return A2(
 						_elm_lang$core$Platform_Cmd_ops['!'],
 						model,
@@ -11045,33 +11093,29 @@ var _mozilla_services$hoverpad$Main$update = F2(
 							_0: _mozilla_services$hoverpad$Main$saveData(
 								{
 									key: 'contentWasSynced',
-									content: _elm_lang$core$Json_Encode$bool(true)
+									content: _elm_lang$core$Json_Encode$string('true')
 								}),
 							_1: {ctor: '[]'}
 						});
 				default:
-					if (_p6._0.ctor === 'Ok') {
+					if (_p8._0.ctor === 'Ok') {
 						return A2(
 							_elm_lang$core$Platform_Cmd_ops['!'],
 							model,
 							{
 								ctor: '::',
-								_0: _mozilla_services$hoverpad$Main$decryptData(
-									A2(
-										_elm_lang$core$Debug$log,
-										'data retrieved',
-										{
-											content: _elm_lang$core$Maybe$Just(_p6._0._0),
-											passphrase: model.passphrase
-										})),
+								_0: A2(
+									_mozilla_services$hoverpad$Main$decryptIfPassphrase,
+									model.passphrase,
+									_elm_lang$core$Maybe$Just(_p8._0._0)),
 								_1: {ctor: '[]'}
 							});
 					} else {
-						if ((_p6._0._0.ctor === 'ServerError') && (_p6._0._0._0 === 404)) {
-							var _v10 = _mozilla_services$hoverpad$Main$UpdateContent(model.loadedContent),
-								_v11 = model;
-							message = _v10;
-							model = _v11;
+						if ((_p8._0._0.ctor === 'ServerError') && (_p8._0._0._0 === 404)) {
+							var _v13 = _mozilla_services$hoverpad$Main$UpdateContent(model.loadedContent),
+								_v14 = model;
+							message = _v13;
+							model = _v14;
 							continue update;
 						} else {
 							return A2(
@@ -11082,7 +11126,7 @@ var _mozilla_services$hoverpad$Main$update = F2(
 										error: A2(
 											_elm_lang$core$Debug$log,
 											'data not retrieved',
-											_elm_lang$core$Basics$toString(_p6._0._0))
+											_elm_lang$core$Basics$toString(_p8._0._0))
 									}),
 								{ctor: '[]'});
 						}
@@ -11098,8 +11142,8 @@ var _mozilla_services$hoverpad$Main$lockOnStartup = F2(
 				model,
 				{ctor: '[]'});
 		} else {
-			var _p19 = lockAfterSeconds;
-			if (_p19.ctor === 'Nothing') {
+			var _p23 = lockAfterSeconds;
+			if (_p23.ctor === 'Nothing') {
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					model,
@@ -11114,7 +11158,7 @@ var _mozilla_services$hoverpad$Main$lockOnStartup = F2(
 						}
 					});
 			} else {
-				return _elm_lang$core$Native_Utils.eq(_p19._0, 0) ? A2(_mozilla_services$hoverpad$Main$update, _mozilla_services$hoverpad$Main$Lock, model) : A2(
+				return _elm_lang$core$Native_Utils.eq(_p23._0, 0) ? A2(_mozilla_services$hoverpad$Main$update, _mozilla_services$hoverpad$Main$Lock, model) : A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					model,
 					{
@@ -11131,16 +11175,27 @@ var _mozilla_services$hoverpad$Main$lockOnStartup = F2(
 		}
 	});
 var _mozilla_services$hoverpad$Main$init = function (flags) {
-	var contentWasSynced = function () {
-		var _p20 = flags.contentWasSyncedRemotely;
-		if (_p20.ctor === 'Nothing') {
-			return false;
+	var lock = function () {
+		var _p24 = flags.passphrase;
+		if (_p24.ctor === 'Nothing') {
+			return true;
 		} else {
-			return _elm_lang$core$Native_Utils.eq(_p20._0, 'true') ? true : false;
+			return false;
 		}
 	}();
-	var model = {lock: true, lockAfterSeconds: flags.lockAfterSeconds, fxaToken: flags.fxaToken, contentWasSynced: contentWasSynced, passphrase: '', content: '', loadedContent: '', modified: false, error: '', reveal: false, debounceCount: 0, encryptedData: _elm_lang$core$Maybe$Nothing, gearMenuOpen: false};
-	return A2(_mozilla_services$hoverpad$Main$lockOnStartup, model, flags.lockAfterSeconds);
+	var contentWasSynced = function () {
+		var _p25 = flags.contentWasSyncedRemotely;
+		if (_p25.ctor === 'Nothing') {
+			return false;
+		} else {
+			return _elm_lang$core$Native_Utils.eq(_p25._0, 'true') ? true : false;
+		}
+	}();
+	var model = {lock: lock, lockAfterSeconds: flags.lockAfterSeconds, fxaToken: flags.fxaToken, contentWasSynced: contentWasSynced, passphrase: flags.passphrase, content: '', loadedContent: '', modified: false, error: '', reveal: false, debounceCount: 0, encryptedData: _elm_lang$core$Maybe$Nothing, gearMenuOpen: false};
+	return A2(
+		_mozilla_services$hoverpad$Main$lockOnStartup,
+		A2(_elm_lang$core$Debug$log, 'Init', model),
+		flags.lockAfterSeconds);
 };
 var _mozilla_services$hoverpad$Main$contentEditable = function (model) {
 	return A2(
@@ -11242,7 +11297,8 @@ var _mozilla_services$hoverpad$Main$formView = function (model) {
 											_0: _elm_lang$html$Html_Attributes$placeholder('Passphrase'),
 											_1: {
 												ctor: '::',
-												_0: _elm_lang$html$Html_Attributes$value(model.passphrase),
+												_0: _elm_lang$html$Html_Attributes$value(
+													A2(_elm_lang$core$Maybe$withDefault, '', model.passphrase)),
 												_1: {
 													ctor: '::',
 													_0: _elm_lang$html$Html_Events$onInput(_mozilla_services$hoverpad$Main$NewPassphrase),
@@ -11443,8 +11499,25 @@ var _mozilla_services$hoverpad$Main$main = _elm_lang$html$Html$programWithFlags(
 					return A2(
 						_elm_lang$core$Json_Decode$andThen,
 						function (lockAfterSeconds) {
-							return _elm_lang$core$Json_Decode$succeed(
-								{contentWasSyncedRemotely: contentWasSyncedRemotely, fxaToken: fxaToken, lockAfterSeconds: lockAfterSeconds});
+							return A2(
+								_elm_lang$core$Json_Decode$andThen,
+								function (passphrase) {
+									return _elm_lang$core$Json_Decode$succeed(
+										{contentWasSyncedRemotely: contentWasSyncedRemotely, fxaToken: fxaToken, lockAfterSeconds: lockAfterSeconds, passphrase: passphrase});
+								},
+								A2(
+									_elm_lang$core$Json_Decode$field,
+									'passphrase',
+									_elm_lang$core$Json_Decode$oneOf(
+										{
+											ctor: '::',
+											_0: _elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
+											_1: {
+												ctor: '::',
+												_0: A2(_elm_lang$core$Json_Decode$map, _elm_lang$core$Maybe$Just, _elm_lang$core$Json_Decode$string),
+												_1: {ctor: '[]'}
+											}
+										})));
 						},
 						A2(
 							_elm_lang$core$Json_Decode$field,

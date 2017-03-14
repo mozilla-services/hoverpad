@@ -27,7 +27,7 @@
   },
   "applications": {
     "gecko": {
-      "id": "hoverpaddemo@mozilla.com"
+      "id": "hoverpad@mozilla.com"
     }
   }
 }

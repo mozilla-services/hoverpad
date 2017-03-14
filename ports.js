@@ -4,6 +4,25 @@ const CONTENT_KEY = "pad";
 
 const IS_WEB_EXTENSION = (typeof chrome === "object" && typeof chrome.storage === "object");
 
+function storePassphrase(passphrase) {
+  // Insecurely storing the passphrase.
+  sessionStorage.setItem("temporaryPassphrase", btoa(passphrase));
+  return Promise.resolve(null);
+}
+
+function dropPassphrase() {
+  sessionStorage.removeItem("temporaryPassphrase");
+  return Promise.resolve(null);
+}
+
+function getPassphrase() {
+  // Insecurely retrieving the passphrase.
+  const passphrase = sessionStorage.getItem("temporaryPassphrase");
+  if (passphrase === null) {
+    return null;
+  }
+  return Promise.resolve(atob(passphrase));
+}
 
 function getItem(key) {
   if (!IS_WEB_EXTENSION) {
@@ -11,11 +30,7 @@ function getItem(key) {
   } else {
     return new Promise(function(resolve, reject) {
       chrome.storage.local.get(key, function(data) {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(data[key] || null);
-        }
+        resolve(data[key] || null);
       });
     });
   }
@@ -34,11 +49,7 @@ function setItem(key, value) {
       let payload = {};
       payload[key] = value;
       chrome.storage.local.set(payload, () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(null);
-        }
+        resolve(null);
       });
     });
   }
@@ -73,6 +84,28 @@ function createElmApp(flags) {
       .catch(function(err) {
         console.error(err);
         app.ports.newError.send('Nothing retrieved: ' + err.message);
+      });
+  });
+
+  app.ports.savePassphrase.subscribe(function(passphrase) {
+    storePassphrase(passphrase)
+      .then(function() {
+        console.log("Passphrase saved");
+      })
+      .catch(function(err) {
+        console.error(err);
+        app.ports.newError.send('Could not save passphrase: ' + err.message);
+      });
+  });
+
+  app.ports.dropPassphrase.subscribe(function() {
+    dropPassphrase()
+      .then(function() {
+        console.log("Passphrase dropped");
+      })
+      .catch(function(err) {
+        console.error(err);
+        app.ports.newError.send('Could not drop passphrase: ' + err.message);
       });
   });
 
@@ -177,14 +210,19 @@ function handleMaybeInt(maybeString) {
   return maybeInt;
 }
 
-Promise.all([getItem('lockAfterSeconds'), getItem('bearer'), getItem('contentWasSynced')])
-  .then(function(results) {
-    console.log("Flags", results);
-    const flags = {lockAfterSeconds: handleMaybeInt(results[0]),
-                   fxaToken: results[1],
-                   contentWasSyncedRemotely: results[2]};
-    createElmApp(flags);
-  })
-  .catch(function(err) {
-    console.error(err);
-  });
+Promise.all([
+  getItem('lockAfterSeconds'),
+  getItem('bearer'),
+  getItem('contentWasSynced'),
+  getPassphrase()
+]).then(function(results) {
+  const flags = {
+    lockAfterSeconds: handleMaybeInt(results[0]),
+    fxaToken: results[1],
+    contentWasSyncedRemotely: results[2],
+    passphrase: results[3]
+  };
+  createElmApp(flags);
+}).catch(function(err) {
+  console.error(err);
+});
