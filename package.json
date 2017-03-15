@@ -1,20 +1,21 @@
 {
   "name": "hoverpad",
-  "version": "1.7.0",
+  "version": "1.8.1",
   "description": "Allows the user to make quick notes by clicking a button and entering text into the resulting popup. The notes are saved in storage and sync across profiles. See https://developer.mozilla.org/Add-ons/WebExtensions/Examples#hoverpad",
   "scripts": {
-    "build": "rm -fr web-ext-artifacts/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
+    "build": "rm -fr web-ext-artifacts/ www/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "format": "npm run lint -- --fix",
     "lint": "eslint .",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
-    "fx-web-ext": "npm run build && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
+    "fx-web-ext": "npm run build && rm -fr www/electron.js www/js/ && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
     "electron-packager": "electron-packager --out electron-apps/ --overwrite --platform=darwin,linux,win32 --ignore=\"(www|elm-stuff|platforms|plugins|icons)\" ./ hoverpad && cd electron-apps/ && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "publish-to-gh-pages": "npm run build && gh-pages --dist ./www",
     "cordova-emulate-android": "npm run build && cordova emulate android",
     "cordova-android": "npm run build && cordova run android",
-    "test": "npm run lint"
+    "test": "npm run lint",
+    "web-ext-sources": "rm -fr Hoverpad-Sources.zip && zip -r Hoverpad-Sources.zip Main.elm background.js elm-package.json encryption.js index.html Makefile manifest.json package.json ports.js README.md style.css icons/"
   },
   "repository": {
     "type": "git",
@@ -29,13 +30,13 @@
   "homepage": "https://github.com/mozilla-services/hoverpad#readme",
   "devDependencies": {
     "cordova": "^6.5.0",
-    "electron": "1.4.15",
+    "electron": "1.6.2",
     "elm": "^0.18.0",
     "elm-live": "^2.6.1",
     "eslint": "^3.16.1",
     "eslint-config-prettier": "^1.4.0",
     "eslint-plugin-prettier": "^2.0.1",
-    "gh-pages": "^0.11.0",
+    "gh-pages": "^0.12.0",
     "web-ext": "^1.7.0"
   }
 }

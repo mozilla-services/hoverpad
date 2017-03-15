@@ -2,7 +2,7 @@
 
   "manifest_version": 2,
   "name": "Hoverpad",
-  "version": "1.7",
+  "version": "1.8.2",
 
   "description": "Allows the user to make quick notes by clicking a button and entering text into the resulting popup. The notes are saved in storage and sync across profiles. See https://developer.mozilla.org/Add-ons/WebExtensions/Examples#hoverpad",
   "icons": {
@@ -10,8 +10,13 @@
   },
 
   "permissions": [
-    "storage"
+    "storage",
+    "tabs"
   ],
+
+  "background": {
+    "scripts": [ "background.js" ]
+  },
 
   "browser_action": {
     "default_icon": {
@@ -22,7 +27,7 @@
   },
   "applications": {
     "gecko": {
-      "id": "hoverpad@mozilla.com"
+      "id": "hoverpaddemo@mozilla.com"
     }
   }
 }
