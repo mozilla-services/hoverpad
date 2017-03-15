@@ -55,6 +55,7 @@ type Msg
     | DataSavedInKinto (Result Kinto.Error String)
     | DataRetrievedFromKinto (Result Kinto.Error String)
     | Tick Time
+    | ContentClicked
 
 
 type alias Flags =
@@ -218,6 +219,12 @@ update message model =
 
                     ( _, _ ) ->
                         newModel ! commands
+
+        ContentClicked ->
+            if model.content == "" && model.loadedContent == initialContent then
+                { model | loadedContent = "" } ! []
+            else
+                model ! []
 
         NewPassphrase passphrase ->
             { model
@@ -574,6 +581,7 @@ contentEditable model =
             else
                 ""
         , Html.Attributes.contenteditable True
+        , Html.Events.onClick ContentClicked
         , Html.Events.on "input" (Decode.map UpdateContent innerHtmlDecoder)
         , Html.Attributes.property "innerHTML" (Encode.string model.loadedContent)
         ]
