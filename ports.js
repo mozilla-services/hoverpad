@@ -211,15 +211,17 @@ function handleMaybeInt(maybeString) {
 
 Promise.all([
   getItem('lockAfterSeconds'),
+  getItem('lastModified'),
   getItem('bearer'),
   getItem('contentWasSynced'),
   getPassphrase()
 ]).then(function(results) {
   const flags = {
     lockAfterSeconds: handleMaybeInt(results[0]),
-    fxaToken: results[1],
-    contentWasSyncedRemotely: results[2],
-    passphrase: results[3]
+    lastModified: handleMaybeInt(results[1]),
+    fxaToken: results[2],
+    contentWasSyncedRemotely: results[3],
+    passphrase: results[4]
   };
   createElmApp(flags);
 }).catch(function(err) {

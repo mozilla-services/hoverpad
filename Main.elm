@@ -1,6 +1,5 @@
 port module Main exposing (..)
 
-import Time
 import Html
 import Html.Attributes
 import Html.Events
@@ -9,6 +8,7 @@ import Json.Encode as Encode
 import Kinto
 import Process
 import Task
+import Time exposing (Time, second)
 
 
 kintoServer =
@@ -47,7 +47,6 @@ type Msg
     | CloseGearMenu String
       -- Locking
     | Lock
-    | LockTimeOut Int
     | SetLockAfterSeconds (Maybe Int)
       -- Syncing
     | EnableSyncing
@@ -55,10 +54,12 @@ type Msg
     | FxaTokenRetrieved String
     | DataSavedInKinto (Result Kinto.Error String)
     | DataRetrievedFromKinto (Result Kinto.Error String)
+    | Tick Time
 
 
 type alias Flags =
     { lockAfterSeconds : Maybe Int
+    , lastModified : Maybe Float
     , fxaToken : Maybe String
     , contentWasSyncedRemotely : Maybe String
     , passphrase : Maybe String
@@ -69,6 +70,8 @@ type alias Model =
     { lock : Bool
     , fromKinto : Bool
     , lockAfterSeconds : Maybe Int
+    , lastModified : Maybe Float
+    , currentTime : Maybe Time
     , contentWasSynced : Bool
     , fxaToken : Maybe String
     , passphrase : Maybe String
@@ -113,6 +116,8 @@ init flags =
             { lock = lock
             , fromKinto = False
             , lockAfterSeconds = flags.lockAfterSeconds
+            , lastModified = flags.lastModified
+            , currentTime = Nothing
             , fxaToken = flags.fxaToken
             , contentWasSynced = contentWasSynced
             , passphrase = flags.passphrase
@@ -131,20 +136,6 @@ init flags =
 
 
 -- Update
-
-
-startLockTimeOut : Maybe Int -> Int -> Cmd Msg
-startLockTimeOut lockAfterSeconds debounceCount =
-    case lockAfterSeconds of
-        Nothing ->
-            Cmd.none
-
-        Just lockAfterSeconds ->
-            if lockAfterSeconds /= 0 then
-                Process.sleep (Time.second * (toFloat lockAfterSeconds))
-                    |> Task.perform (always (LockTimeOut debounceCount))
-            else
-                Cmd.none
 
 
 lockOnStartup : Model -> Maybe Int -> ( Model, Cmd Msg )
@@ -186,6 +177,48 @@ decryptIfPassphrase passphrase content =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
+        Tick newTime ->
+            let
+                newModel =
+                    { model
+                        | currentTime = Just newTime
+                        , lastModified =
+                            case model.lastModified of
+                                Nothing ->
+                                    if not model.lock then
+                                        Just newTime
+                                    else
+                                        Nothing
+
+                                Just lastModified ->
+                                    Just lastModified
+                    }
+
+                commands =
+                    [ case model.lastModified of
+                        Nothing ->
+                            if not model.lock then
+                                saveData
+                                    { key = "lastModified"
+                                    , content = Encode.string (toString newTime)
+                                    }
+                            else
+                                Cmd.none
+
+                        Just lastModified ->
+                            Cmd.none
+                    ]
+            in
+                case ( model.lastModified, model.lockAfterSeconds ) of
+                    ( Just lastModified, Just lockAfterSeconds ) ->
+                        if (Debug.log "Time spend" (newTime - lastModified)) > (toFloat lockAfterSeconds) * 1000 && lockAfterSeconds /= 0 then
+                            update Lock newModel
+                        else
+                            newModel ! commands
+
+                    ( _, _ ) ->
+                        newModel ! commands
+
         NewPassphrase passphrase ->
             { model
                 | passphrase =
@@ -217,6 +250,9 @@ update message model =
 
         DataDecrypted data ->
             let
+                modified =
+                    model.fromKinto && model.loadedContent /= Maybe.withDefault "" data
+
                 content =
                     if model.loadedContent == "" || model.loadedContent == initialContent || model.contentWasSynced then
                         Maybe.withDefault initialContent data
@@ -226,16 +262,14 @@ update message model =
                         model.loadedContent ++ "<br/> ==== <br/>" ++ Maybe.withDefault "" data
 
                 commands =
-                    if model.fromKinto && model.loadedContent /= Maybe.withDefault "" data then
-                        [ encryptIfPassphrase model.passphrase content
-                        , startLockTimeOut model.lockAfterSeconds model.debounceCount
-                        ]
+                    if modified then
+                        [ encryptIfPassphrase model.passphrase content ]
                     else
-                        [ startLockTimeOut model.lockAfterSeconds model.debounceCount ]
+                        []
             in
                 { model
                     | loadedContent = content
-                    , modified = model.fromKinto
+                    , modified = modified
                     , lock = False
                     , fromKinto = False
                 }
@@ -255,12 +289,17 @@ update message model =
                 { model
                     | content = content
                     , modified = True
+                    , lastModified =
+                        case model.currentTime of
+                            Nothing ->
+                                Nothing
+
+                            Just currentTime ->
+                                Just (Time.inMilliseconds currentTime)
                     , debounceCount = debounceCount
                     , lock = False
                 }
-                    ! [ Process.sleep Time.second |> Task.perform (always (TimeOut debounceCount))
-                      , startLockTimeOut model.lockAfterSeconds debounceCount
-                      ]
+                    ! [ Process.sleep Time.second |> Task.perform (always (TimeOut debounceCount)) ]
 
         NewError error ->
             { model
@@ -275,11 +314,13 @@ update message model =
             { model
                 | lock = True
                 , gearMenuOpen = False
+                , lastModified = Nothing
                 , content = ""
                 , passphrase = Nothing
             }
                 ! [ dropPassphrase {}
                   , encryptIfPassphrase model.passphrase model.content
+                  , saveData { key = "lastModified", content = Encode.null }
                   ]
 
         DataSaved key ->
@@ -298,21 +339,25 @@ update message model =
 
         TimeOut debounceCount ->
             if debounceCount == model.debounceCount then
-                model ! [ encryptIfPassphrase model.passphrase model.content ]
-            else
-                model ! []
-
-        LockTimeOut debounceCount ->
-            if debounceCount == model.debounceCount then
-                update Lock model
+                { model | debounceCount = 0 } ! [ encryptIfPassphrase model.passphrase model.content ]
             else
                 model ! []
 
         DataEncrypted encrypted ->
-            { model | encryptedData = Just encrypted }
-                ! [ saveData { key = "pad", content = Encode.string encrypted }
-                  , uploadData model.fxaToken encrypted
-                  ]
+            let
+                lastModified =
+                    case model.lastModified of
+                        Nothing ->
+                            Encode.null
+
+                        Just timestamp ->
+                            Encode.string (toString timestamp)
+            in
+                { model | encryptedData = Just encrypted }
+                    ! [ saveData { key = "pad", content = Encode.string encrypted }
+                      , saveData { key = "lastModified", content = lastModified }
+                      , uploadData model.fxaToken encrypted
+                      ]
 
         DataNotEncrypted error ->
             { model | error = (Debug.log "" error) } ! []
@@ -674,6 +719,7 @@ subscriptions model =
         , dataNotDecrypted DataNotDecrypted
         , bodyClicked CloseGearMenu
         , syncEnabled FxaTokenRetrieved
+        , Time.every second Tick
         ]
 
 
