@@ -10,6 +10,7 @@ function storePassphrase(passphrase) {
     sessionStorage.setItem("temporaryPassphrase", btoa(passphrase));
     return Promise.resolve(null);
   } else {
+    chrome.runtime.sendMessage({ action: 'passphraseCleaner' });
     return setItem("temporaryPassphrase", passphrase);
   }
 }
@@ -32,6 +33,7 @@ function getPassphrase() {
     }
     return Promise.resolve(atob(passphrase));
   } else {
+    chrome.runtime.sendMessage({ action: 'passphraseCleaner' });
     return getItem("temporaryPassphrase");
   }
 }

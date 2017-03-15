@@ -25,19 +25,27 @@ function handleMaybeInt(maybeString) {
 }
 
 function handlePassphraseCleaning() {
-  chrome.storage.local.get(["lastModified", "lockAfterSeconds", "passphrase"], function(data) {
+  chrome.storage.local.get(["lastModified", "lockAfterSeconds", "temporaryPassphrase"], function(data) {
     const currentTime = Date.now();
     const lastModified = handleMaybeInt(data['lastModified']);
     const lockAfterSeconds = handleMaybeInt(data['lockAfterSeconds']);
 
-    if (data["passphrase"]) {
-      if (!lastModified || !lockAfterSeconds || currentTime - lastModified > lockAfterSeconds * 1000) {
+    if (data["temporaryPassphrase"] && lastModified) {
+      console.log("lastModified", lastModified,
+                  "lockAfterSeconds", lockAfterSeconds,
+                  "time spent", (currentTime - lastModified) / 1000);
+      if (!lockAfterSeconds || currentTime - lastModified > lockAfterSeconds * 1000) {
         console.log("cleaning the passphrase in the background.");
-        chrome.storage.local.set({"lastModified": null, "lockAfterSeconds": null, "passphrase": null});
+        chrome.storage.local.set({
+          "lastModified": null,
+          "temporaryPassphrase": null
+        });
       } else {
         console.log("Looking for passphrase cleaning");
-        setTimeout(1000, handlePassphraseCleaning);
+        setTimeout(handlePassphraseCleaning, lockAfterSeconds * 1000 - currentTime + lastModified + 1);
       }
+    } else if (data["temporaryPassphrase"]) {
+      setTimeout(handlePassphraseCleaning, 5000);
     }
   });
 }
@@ -50,10 +58,11 @@ function handleAuthentication() {
 
 chrome.runtime.onMessage.addListener(function (eventData) {
   switch (eventData.action) {
+    case 'passphraseCleaner':
+      handlePassphraseCleaning();
+      break;
     case 'authenticate':
       handleAuthentication();
       break;
   }
 });
-
-handlePassphraseCleaning();

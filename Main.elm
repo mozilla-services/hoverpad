@@ -395,6 +395,16 @@ update message model =
                                 Nothing ->
                                     Encode.null
                         }
+                  , saveData
+                        { key = "lastModified"
+                        , content =
+                            case model.currentTime of
+                                Nothing ->
+                                    Encode.null
+
+                                Just currentTime ->
+                                    Encode.string (toString currentTime)
+                        }
                   ]
 
         EnableSyncing ->
