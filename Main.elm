@@ -212,7 +212,7 @@ update message model =
             in
                 case ( model.lastModified, model.lockAfterSeconds ) of
                     ( Just lastModified, Just lockAfterSeconds ) ->
-                        if (Debug.log "Time spend" (newTime - lastModified)) > (toFloat lockAfterSeconds) * 1000 && lockAfterSeconds /= 0 then
+                        if newTime - lastModified > (toFloat lockAfterSeconds) * 1000 && lockAfterSeconds /= 0 then
                             update Lock newModel
                         else
                             newModel ! commands
