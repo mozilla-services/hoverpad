@@ -28,7 +28,7 @@ function getPassphrase() {
   if (!IS_WEB_EXTENSION) {
     const passphrase = sessionStorage.getItem("temporaryPassphrase");
     if (passphrase === null) {
-      return null;
+      return Promise.resolve(null);
     }
     return Promise.resolve(atob(passphrase));
   } else {
@@ -148,10 +148,6 @@ function createElmApp(flags) {
     document.execCommand('bold', false, null);
   });
 
-  app.ports.copySelection.subscribe(function(content) {
-    document.execCommand('copy', false, null);
-  });
-
   app.ports.enableSync.subscribe(function(content) {
     if (!IS_WEB_EXTENSION) {
       const {origin, pathname} = document.location;
@@ -175,7 +171,7 @@ function createElmApp(flags) {
 
 
   if (!IS_WEB_EXTENSION) {
-    // Lecture du hash si dispo
+    // Reading the hash if present
     if (window.location.hash.indexOf("#auth=") === 0) {
       const token = window.location.hash.split('#auth=')[1];
       setItem("bearer", token)

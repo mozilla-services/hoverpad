@@ -10,6 +10,7 @@ html {
   font-size: 10px;
   height: 100%;
   margin: 0 auto;
+  min-width: 600px;
   max-width: 800px;
   overflow: hidden;
   width: 100%;

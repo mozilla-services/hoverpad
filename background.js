@@ -3,7 +3,7 @@ const redirectIntermediate = "https://natim.github.io/get_fxa_token/#";
 
 function tabCallback(tabId, changeInfo, updatedTab) {
   if (changeInfo.status === 'complete' && updatedTab.url.indexOf(redirectIntermediate) === 0) {
-    browser.tabs.remove(tabId);
+    chrome.tabs.remove(tabId);
     const bearer = updatedTab.url.split(redirectIntermediate)[1];
     chrome.storage.local.set({bearer: bearer}, function() {
       if (chrome.runtime.lastError) {
@@ -17,8 +17,8 @@ function tabCallback(tabId, changeInfo, updatedTab) {
 }
 
 function handleAuthentication() {
-  browser.tabs.create({ 'url': authenticateURL }, function () {
-	browser.tabs.onUpdated.addListener(tabCallback);
+  chrome.tabs.create({ 'url': authenticateURL }, function () {
+    chrome.tabs.onUpdated.addListener(tabCallback);
   });
 }
 
