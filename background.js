@@ -16,6 +16,32 @@ function tabCallback(tabId, changeInfo, updatedTab) {
   }
 }
 
+function handleMaybeInt(maybeString) {
+  const maybeInt = parseInt(maybeString, 10);
+  if (Number.isNaN(maybeInt)) {
+    return null;
+  }
+  return maybeInt;
+}
+
+function handlePassphraseCleaning() {
+  chrome.storage.local.get(["lastModified", "lockAfterSeconds", "passphrase"], function(data) {
+    const currentTime = Date.now();
+    const lastModified = handleMaybeInt(data['lastModified']);
+    const lockAfterSeconds = handleMaybeInt(data['lockAfterSeconds']);
+
+    if (data["passphrase"]) {
+      if (!lastModified || !lockAfterSeconds || currentTime - lastModified > lockAfterSeconds * 1000) {
+        console.log("cleaning the passphrase in the background.");
+        chrome.storage.local.set({"lastModified": null, "lockAfterSeconds": null, "passphrase": null});
+      } else {
+        console.log("Looking for passphrase cleaning");
+        setTimeout(1000, handlePassphraseCleaning);
+      }
+    }
+  });
+}
+
 function handleAuthentication() {
   chrome.tabs.create({ 'url': authenticateURL }, function () {
     chrome.tabs.onUpdated.addListener(tabCallback);
@@ -29,3 +55,5 @@ chrome.runtime.onMessage.addListener(function (eventData) {
       break;
   }
 });
+
+handlePassphraseCleaning();
