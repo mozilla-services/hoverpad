@@ -23,14 +23,6 @@ initialContent =
 -- Model
 
 
-type alias Flags =
-    { lockAfterSeconds : Maybe Int
-    , fxaToken : Maybe String
-    , contentWasSyncedRemotely : Maybe String
-    , passphrase : Maybe String
-    }
-
-
 type Msg
     = NewError String
       -- Data encryption
@@ -63,6 +55,14 @@ type Msg
     | FxaTokenRetrieved String
     | DataSavedInKinto (Result Kinto.Error String)
     | DataRetrievedFromKinto (Result Kinto.Error String)
+
+
+type alias Flags =
+    { lockAfterSeconds : Maybe Int
+    , fxaToken : Maybe String
+    , contentWasSyncedRemotely : Maybe String
+    , passphrase : Maybe String
+    }
 
 
 type alias Model =
@@ -226,7 +226,7 @@ update message model =
                         model.loadedContent ++ "<br/> ==== <br/>" ++ Maybe.withDefault "" data
 
                 commands =
-                    if model.fromKinto && model.loadedContent == Maybe.withDefault "" data then
+                    if model.fromKinto && model.loadedContent /= Maybe.withDefault "" data then
                         [ encryptIfPassphrase model.passphrase content
                         , startLockTimeOut model.lockAfterSeconds model.debounceCount
                         ]
@@ -341,7 +341,10 @@ update message model =
             model ! [ enableSync {} ]
 
         DisableSyncing ->
-            { model | fxaToken = Nothing } ! [ saveData { key = "bearer", content = Encode.null } ]
+            { model | fxaToken = Nothing, contentWasSynced = False }
+                ! [ saveData { key = "bearer", content = Encode.null }
+                  , saveData { key = "contentWasSynced", content = Encode.null }
+                  ]
 
         FxaTokenRetrieved token ->
             { model | fxaToken = Just token } ! [ retrieveData (Just token) ]
