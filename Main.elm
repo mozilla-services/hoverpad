@@ -15,6 +15,10 @@ kintoServer =
     "https://kinto.dev.mozaws.net/v1/"
 
 
+initialContent =
+    "Edit here"
+
+
 
 -- Model
 
@@ -95,10 +99,7 @@ init flags =
                     False
 
                 Just wasSynced ->
-                    if wasSynced == "true" then
-                        True
-                    else
-                        False
+                    wasSynced == "true"
 
         lock =
             case flags.passphrase of
@@ -217,8 +218,8 @@ update message model =
         DataDecrypted data ->
             let
                 content =
-                    if model.loadedContent == "" || model.loadedContent == "Edit here" || model.contentWasSynced then
-                        Maybe.withDefault "Edit here" data
+                    if model.loadedContent == "" || model.loadedContent == initialContent || model.contentWasSynced then
+                        Maybe.withDefault initialContent data
                     else if model.loadedContent == Maybe.withDefault "" data then
                         model.loadedContent
                     else
@@ -419,6 +420,11 @@ retrieveData fxaToken =
 -- View
 
 
+icon : String -> Html.Html Msg
+icon name =
+    Html.i [ Html.Attributes.class ("glyphicon glyphicon-" ++ name) ] []
+
+
 formView : Model -> Html.Html Msg
 formView model =
     Html.form
@@ -436,6 +442,7 @@ formView model =
             [ Html.input
                 [ Html.Attributes.id "password"
                 , Html.Attributes.type_ "password"
+                , Html.Attributes.class "form-control"
                 , Html.Attributes.placeholder "Passphrase"
                 , Html.Attributes.value (Maybe.withDefault "" model.passphrase)
                 , Html.Events.onInput NewPassphrase
@@ -461,7 +468,7 @@ controlBar model =
             , Html.Attributes.title "Blur selection"
             , Html.Events.onClick BlurSelection
             ]
-            [ Html.i [ Html.Attributes.class "glyphicon glyphicon-sunglasses" ] [] ]
+            [ icon "sunglasses" ]
         , Html.text " "
         , Html.button
             [ Html.Attributes.id "toggle-all"
@@ -473,14 +480,11 @@ controlBar model =
                     "Reveal all"
             , Html.Events.onClick ToggleReveal
             ]
-            [ Html.i
-                [ Html.Attributes.class <|
-                    if model.reveal then
-                        "glyphicon glyphicon-eye-close"
-                    else
-                        "glyphicon glyphicon-eye-open"
-                ]
-                []
+            [ icon <|
+                if model.reveal then
+                    "eye-close"
+                else
+                    "eye-open"
             ]
         ]
 
@@ -531,11 +535,11 @@ contentEditable model =
 lockMenuEntry : Model -> String -> Maybe Int -> Html.Html Msg
 lockMenuEntry model title lockAfterSeconds =
     let
-        iconClass =
+        iconName =
             if model.lockAfterSeconds == lockAfterSeconds then
-                "glyphicon glyphicon-ok"
+                "ok"
             else
-                "glyphicon glyphicon-none"
+                "none"
     in
         Html.li
             []
@@ -543,7 +547,7 @@ lockMenuEntry model title lockAfterSeconds =
                 [ Html.Attributes.href "#"
                 , Html.Events.onClick (SetLockAfterSeconds lockAfterSeconds)
                 ]
-                [ Html.i [ Html.Attributes.class iconClass ] []
+                [ icon iconName
                 , Html.text " "
                 , Html.text title
                 ]
@@ -566,15 +570,15 @@ syncMenuEntry model =
                 [ Html.Attributes.href "#"
                 , Html.Events.onClick eventName
                 ]
-                [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
+                [ icon "none"
                 , Html.text " "
                 , Html.text label
                 ]
             ]
 
 
-gearMenu : Model -> String -> Html.Html Msg
-gearMenu model icon =
+gearMenu : Model -> Html.Html Msg
+gearMenu model =
     let
         divClass =
             if model.gearMenuOpen then
@@ -590,7 +594,7 @@ gearMenu model icon =
                 , Html.Attributes.id "gear-menu"
                 , onClickStopPropagation ToggleGearMenu
                 ]
-                [ Html.i [ Html.Attributes.class "glyphicon glyphicon-cog" ] [] ]
+                [ icon "cog" ]
             , Html.ul
                 [ Html.Attributes.class "dropdown-menu dropdown-menu-right" ]
                 [ Html.li
@@ -610,7 +614,7 @@ gearMenu model icon =
                         , Html.Attributes.href "#"
                         , Html.Events.onClick Lock
                         ]
-                        [ Html.i [ Html.Attributes.class "glyphicon glyphicon-none" ] []
+                        [ icon "none"
                         , Html.text " "
                         , Html.text "Lock now"
                         ]
@@ -641,7 +645,7 @@ view model =
                 , Html.div [ Html.Attributes.class "col-md-1 col-md-offset-4" ]
                     [ padStatus model ]
                 , Html.div [ Html.Attributes.class "col-md-1" ]
-                    [ gearMenu model "gear" ]
+                    [ gearMenu model ]
                 ]
           else
             Html.div [] []
