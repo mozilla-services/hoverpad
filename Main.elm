@@ -230,7 +230,11 @@ update message model =
                 ! []
 
         GetData ->
-            { model | error = "" } ! [ savePassphrase model.passphrase, getData {}, retrieveData model.fxaToken ]
+            { model | error = "", lastModified = Nothing }
+                ! [ savePassphrase model.passphrase
+                  , getData {}
+                  , retrieveData model.fxaToken
+                  ]
 
         DataRetrieved list ->
             case list of
@@ -315,6 +319,7 @@ update message model =
                 | lock = True
                 , gearMenuOpen = False
                 , lastModified = Nothing
+                , loadedContent = ""
                 , content = ""
                 , passphrase = Nothing
             }
