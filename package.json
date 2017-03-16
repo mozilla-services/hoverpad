@@ -1,9 +1,9 @@
 {
   "name": "hoverpad",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Allows the user to make quick notes by clicking a button and entering text into the resulting popup. The notes are saved in storage and sync across profiles. See https://developer.mozilla.org/Add-ons/WebExtensions/Examples#hoverpad",
   "scripts": {
-    "build": "rm -fr hoverpad.js web-ext-artifacts/ www/ && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
+    "build": "rm -fr hoverpad.js web-ext-artifacts/ www/ && ./scripts/update-version && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
     "chrome-web-ext": "npm run build && ./scripts/chrome-manifest.js && chromium-browser --pack-extension=$PWD/www/ --pack-extension-key=$PWD/hoverpad.pem && mv www.crx hoverpad.crx",
     "chrome-store-zip": "rm -fr hoverpad.zip && npm run build && ./scripts/chrome-manifest.js && (cd www/ && zip -r ../hoverpad.zip *)",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
     "fx-web-ext": "npm run build && rm -fr www/electron.js www/js/ && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
+    "fx-web-ext-demo": "npm run build && rm -fr www/electron.js www/js/ && ./scripts/set-manifest-demo-id && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
     "electron-packager": "electron-packager --out electron-apps/ --overwrite --platform=darwin,linux,win32 --ignore=\"(www|elm-stuff|platforms|plugins|icons)\" ./ hoverpad && cd electron-apps/ && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "publish-to-gh-pages": "npm run build && gh-pages --dist ./www",

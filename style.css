@@ -10,10 +10,9 @@ html {
   font-size: 10px;
   height: 100%;
   margin: 0 auto;
-  min-width: 600px;
+  min-width: 420px; /* This is need for Chrome and Firefox popup. Shouldn't be more that 420px */
   max-width: 800px;
   overflow: hidden;
-  width: 100%;
 }
 
 body {

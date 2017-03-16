@@ -66,8 +66,6 @@ function encrypt(passphrase, content) {
 
   const data = encoder.encode(content);
 
-  console.debug('encrypt', passphrase, content);
-
   return generateKey(passphrase, salt)
     .then(encryptionKey => {
       return crypto.subtle.encrypt(
@@ -114,8 +112,6 @@ function decrypt(passphrase, encryptedContent) {
     return Promise.resolve('Reset previously malformed saved pad');
   }
 
-  console.debug('decrypt', passphrase, encryptedContent);
-
   return generateKey(passphrase, salt)
     .then(decryptionKey => {
       return crypto.subtle.decrypt(
@@ -129,7 +125,6 @@ function decrypt(passphrase, encryptedContent) {
     })
     .then(decryptedArrayBuffer => {
       const decrypted = decoder.decode(decryptedArrayBuffer);
-      console.debug('decrypted', decrypted);
       return decrypted;
     });
 }
