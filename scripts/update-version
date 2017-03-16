@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+const { writeFileSync } = require('fs');
+const PACKAGE_JSON = require('../package.json');
+const KEYS = ['version'];
+
+updateFile('../manifest.json');
+updateFile('../manifest-demo.json');
+
+function updateFile(file, pkg = PACKAGE_JSON, keys = KEYS) {
+  const filePath = require.resolve(file);
+  const data = require(filePath);
+
+  keys.forEach(key => data[key] = pkg[key]);
+  const str = JSON.stringify(data, null, 2) + '\n';
+  writeFileSync(filePath, str);
+}
