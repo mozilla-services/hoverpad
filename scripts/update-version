@@ -5,7 +5,6 @@ const PACKAGE_JSON = require('../package.json');
 const KEYS = ['version'];
 
 updateFile('../manifest.json');
-updateFile('../manifest-demo.json');
 
 function updateFile(file, pkg = PACKAGE_JSON, keys = KEYS) {
   const filePath = require.resolve(file);

@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "live": "elm-live Main.elm --output=hoverpad.js --open",
     "fx-web-ext": "npm run build && rm -fr www/electron.js www/js/ && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
+    "fx-web-ext-demo": "npm run build && rm -fr www/electron.js www/js/ && ./scripts/set-manifest-demo-id && web-ext build -s www && unzip -l web-ext-artifacts/*.zip",
     "electron": "electron electron.js",
     "electron-packager": "electron-packager --out electron-apps/ --overwrite --platform=darwin,linux,win32 --ignore=\"(www|elm-stuff|platforms|plugins|icons)\" ./ hoverpad && cd electron-apps/ && for i in */; do zip -r \"${i%/}.zip\" \"$i\"; done",
     "publish-to-gh-pages": "npm run build && gh-pages --dist ./www",
