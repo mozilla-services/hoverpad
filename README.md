@@ -6,8 +6,7 @@ A persistent pad — click a button in your browser and add some notes,
 which will persist even after browser restarts and be synced between
 your browsers.
 
-Works in Firefox 53+, and will also work as a Chrome extension, out of
-the box.
+Works in Firefox 51+, as a Chrome extension, as a web, mobile and desktop app.
 
 Try out [the demo](https://mozilla-services.github.io/hoverpad/)
 
@@ -20,27 +19,24 @@ This extension includes:
 
 Hoverpad uses the WebExtensions
 [Storage API](https://developer.mozilla.org/Add-ons/WebExtensions/API/storage)
-to persist the notes.
+to persist the notes encrypted.
 
 ## What it shows
 
 * How to persist data in a WebExtension using the Storage Sync API.
+* How to connect using Firefox Account in an addon
+* How to build an extension with [Elm](http://www.elm-lang.org/)
+* How to encrypt data using WebCrypto
+* How to sync data and handle conflicts with Kinto
 
 ## How to try the add-on in Firefox?
-
-**You will need Firefox Beta or Firefox Nightly to use this add-on.**
 
 ### From addons.mozilla.org
 
 Grab it from AMO: https://addons.mozilla.org/firefox/addon/hoverpad/
 
-If you want to install while it is not verified yet, you can:
-
-1. Go to `about:config`
-2. Toggle `xpinstall.signatures.required` to true
-3. You will get automatic updates
-
-If you don't care about automatic updates, you can also install the latest XPI from https://github.com/mozilla-services/hoverpad/releases
+If you don't care about automatic updates, you can also install the
+latest XPI from https://github.com/mozilla-services/hoverpad/releases
 
 ### From the source code
 
@@ -52,10 +48,9 @@ If you don't care about automatic updates, you can also install the latest XPI f
 
 ## How to try the add-on in Chrome?
 
-
 ### From the Chrome Store
 
-Grab it from the Chrome Store: https://chrome.google.com/webstore/detail/hoverpad/kedanmokpljgpkgfojeoigehigpoljie
+[Grab it from the Chrome Store](https://chrome.google.com/webstore/detail/hoverpad/kedanmokpljgpkgfojeoigehigpoljie)
 
 ### From the source code
 
@@ -82,7 +77,8 @@ npm run electron
 
 ## Mobile app
 
-Using [Cordova](https://cordova.apache.org/), you can run the hoverpad as an application on your mobile.
+Using [Cordova](https://cordova.apache.org/), you can run the hoverpad
+as an application on your mobile.
 
 First install Cordova:
 
@@ -100,4 +96,25 @@ Then run the application (here on Android):
 
 ```sh
 npm run cordova-android
+```
+
+## How to build the Chrome extension ``hoverpad.crx`` file?
+
+Assuming the ``chromium-browser`` command is available in your ``PATH``:
+
+```sh
+npm run chrome-web-ext
+```
+
+## How to build the Chrome Store ``hoverpad.zip`` file?
+
+```sh
+npm run chrome-store-zip
+```
+
+## How to build the Firefox extension ``hoverpad.xpi`` file?
+
+```sh
+npm run fx-web-ext
+ls hoverpad/web-ext-artifacts/hoverpad-*.zip
 ```
