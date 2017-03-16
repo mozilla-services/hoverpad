@@ -19,15 +19,15 @@ This extension includes:
 
 Hoverpad uses the WebExtensions
 [Storage API](https://developer.mozilla.org/Add-ons/WebExtensions/API/storage)
-to persist the notes encrypted.
+to create persistent, encrypted notes.
 
 ## What it shows
 
 * How to persist data in a WebExtension using the Storage Sync API.
-* How to connect using Firefox Account in an addon
+* How to connect using Firefox Account in an add-on
 * How to build an extension with [Elm](http://www.elm-lang.org/)
 * How to encrypt data using WebCrypto
-* How to sync data and handle conflicts with Kinto
+* How to sync data and handle conflicts with [Kinto](http://kinto.readthedocs.io/en/stable/)
 
 ## How to try the add-on in Firefox?
 
@@ -77,8 +77,9 @@ npm run electron
 
 ## Mobile app
 
-Using [Cordova](https://cordova.apache.org/), you can run the hoverpad
-as an application on your mobile.
+Using [Cordova](https://cordova.apache.org/) allows you to create a
+Hoverpad binary which can be installed on your mobile Android/iOS
+device.
 
 First install Cordova:
 
@@ -100,11 +101,32 @@ npm run cordova-android
 
 ## How to build the Chrome extension ``hoverpad.crx`` file?
 
-Assuming the ``chromium-browser`` command is available in your ``PATH``:
+Assuming the ``chromium-browser`` command is available in your
+``PATH``:
 
 ```sh
 npm run chrome-web-ext
 ```
+
+You can create make the ``chromium-browser`` command available in your
+path like that:
+
+```sh
+sudo apt install chromium-browser
+```
+
+or from a chrome installation:
+
+```sh
+ln -s /opt/google/chrome/chrome /usr/local/bin/chromium-browser
+```
+
+or on Mac OS X:
+
+```sh
+ln -s /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome /usr/local/bin/chromium-browser
+```
+
 
 ## How to build the Chrome Store ``hoverpad.zip`` file?
 
@@ -116,5 +138,5 @@ npm run chrome-store-zip
 
 ```sh
 npm run fx-web-ext
-ls hoverpad/web-ext-artifacts/hoverpad-*.zip
+ls web-ext-artifacts/hoverpad-*.zip
 ```
