@@ -16,6 +16,43 @@ function tabCallback(tabId, changeInfo, updatedTab) {
   }
 }
 
+function handleMaybeInt(maybeString) {
+  const maybeInt = parseInt(maybeString, 10);
+  if (Number.isNaN(maybeInt)) {
+    return null;
+  }
+  return maybeInt;
+}
+
+function handlePassphraseCleaning() {
+  chrome.storage.local.get(["lastModified", "lockAfterSeconds", "temporaryPassphrase"], function(data) {
+    const currentTime = Date.now();
+    const lastModified = handleMaybeInt(data.lastModified);
+    const lockAfterSeconds = handleMaybeInt(data.lockAfterSeconds);
+
+    if (data.temporaryPassphrase && lastModified) {
+      console.log("lastModified", lastModified,
+                  "lockAfterSeconds", lockAfterSeconds,
+                  "time spent", (currentTime - lastModified) / 1000);
+      if (!lockAfterSeconds || currentTime - lastModified > lockAfterSeconds * 1000) {
+        console.log("cleaning the passphrase in the background.");
+        chrome.storage.local.set({
+          lastModified: null,
+          temporaryPassphrase: null
+        });
+      } else {
+        console.log("Looking for passphrase cleaning");
+        /* Try again when the passphrase is supposed to expire */
+        const waitForMilliseconds = (lockAfterSeconds * 1000) - (currentTime - lastModified) + 1;
+        setTimeout(handlePassphraseCleaning, waitForMilliseconds);
+      }
+    } else if (data.temporaryPassphrase && lockAfterSeconds) {
+      /* If we don't have a lastModified yet, it's because it just started */
+      setTimeout(handlePassphraseCleaning, lockAfterSeconds * 1000);
+    }
+  });
+}
+
 function handleAuthentication() {
   chrome.tabs.create({ 'url': authenticateURL }, function () {
     chrome.tabs.onUpdated.addListener(tabCallback);
@@ -24,6 +61,9 @@ function handleAuthentication() {
 
 chrome.runtime.onMessage.addListener(function (eventData) {
   switch (eventData.action) {
+    case 'passphraseCleaner':
+      handlePassphraseCleaning();
+      break;
     case 'authenticate':
       handleAuthentication();
       break;

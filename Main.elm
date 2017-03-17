@@ -381,7 +381,10 @@ update message model =
             { model | gearMenuOpen = False } ! []
 
         SetLockAfterSeconds lockAfterSeconds ->
-            { model | lockAfterSeconds = lockAfterSeconds }
+            { model
+                | lockAfterSeconds = lockAfterSeconds
+                , lastModified = model.currentTime
+            }
                 ! [ saveData
                         { key = "lockAfterSeconds"
                         , content =
@@ -391,6 +394,16 @@ update message model =
 
                                 Nothing ->
                                     Encode.null
+                        }
+                  , saveData
+                        { key = "lastModified"
+                        , content =
+                            case model.currentTime of
+                                Nothing ->
+                                    Encode.null
+
+                                Just currentTime ->
+                                    Encode.string (toString currentTime)
                         }
                   ]
 
