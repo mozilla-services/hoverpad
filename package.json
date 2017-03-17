@@ -4,6 +4,8 @@
   "description": "Allows the user to make quick notes by clicking a button and entering text into the resulting popup. The notes are saved in storage and sync across profiles. See https://developer.mozilla.org/Add-ons/WebExtensions/Examples#hoverpad",
   "scripts": {
     "build": "rm -fr hoverpad.js web-ext-artifacts/ www/ && ./scripts/update-version && elm-make Main.elm --output=www/hoverpad.js && cp -r manifest.json *.js *.css icons index.html www/",
+    "chrome-web-ext": "npm run build && ./scripts/chrome-manifest.js && chromium-browser --pack-extension=$PWD/www/ --pack-extension-key=$PWD/hoverpad.pem && mv www.crx hoverpad.crx",
+    "chrome-store-zip": "rm -fr hoverpad.zip && npm run build && ./scripts/chrome-manifest.js && (cd www/ && zip -r ../hoverpad.zip *)",
     "debug": "elm-live Main.elm --output=hoverpad.js --open -- --debug",
     "format": "npm run lint -- --fix",
     "lint": "eslint .",
