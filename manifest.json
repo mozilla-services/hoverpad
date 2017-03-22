@@ -4,7 +4,8 @@
   "version": "1.8.2",
   "description": "A persistent encrypted pad — click a button in your browser and add some notes, which will persist even after browser restarts and be synced between your browsers.",
   "icons": {
-    "48": "icons/hoverpad-48.png"
+    "48": "icons/hoverpad-48.png",
+    "96": "icons/hoverpad-96.png"
   },
   "permissions": [
     "storage",
@@ -17,7 +18,8 @@
   },
   "browser_action": {
     "default_icon": {
-      "32": "icons/hoverpad-32.png"
+      "48": "icons/hoverpad-48.png",
+      "96": "icons/hoverpad-96.png"
     },
     "default_title": "Hoverpad",
     "default_popup": "index.html"
