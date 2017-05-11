@@ -8,8 +8,14 @@
   },
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "identity",
+    "notifications",
+    // TODO: fix up
+    "*://*/*"
   ],
+
+
   "background": {
     "scripts": [
       "background.js"
@@ -22,6 +28,12 @@
     "default_title": "Hoverpad",
     "default_popup": "index.html"
   },
+
+
+  "options_ui": {
+    "page": "options/options.html"
+  },
+
   "applications": {
     "gecko": {
       "id": "hoverpad@mozilla.com"
