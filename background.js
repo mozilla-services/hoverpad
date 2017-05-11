@@ -2,13 +2,13 @@ const REDIRECT_URL = browser.identity.getRedirectURL();
 const CLIENT_ID = '3a7d05df0d8db810';
 const SCOPES = ['profile keys'];
 const AUTH_URL =
-`http://127.0.0.1:9010/v1/authorization
+`https://oauth-oauth-keys-prototype.dev.lcip.org/v1/authorization
 ?client_id=${CLIENT_ID}
 &state=state
 &redirect_uri=${encodeURIComponent(REDIRECT_URL)}
 &scope=${encodeURIComponent(SCOPES.join(' '))}`;
-const TOKEN_URL = `http://127.0.0.1:9010/v1/token`;
-const KEYS_URL = `http://127.0.0.1:9010/v1/keys`;
+const TOKEN_URL = `https://oauth-oauth-keys-prototype.dev.lcip.org/v1/token`;
+const KEYS_URL = `https://oauth-oauth-keys-prototype.dev.lcip.org/v1/keys`;
 
 // TODO: move to server
 const CLIENT_SECRET = 'aaf992e3ccf3a8932c8c1aa4e7cce475a6059c73656cda0c9d91873d19a84f31';
