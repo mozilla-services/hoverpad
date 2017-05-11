@@ -44,6 +44,19 @@ function createKeyPair () {
   });
 }
 
+function hexStringToByte(str) {
+  if (!str) {
+    return new Uint8Array();
+  }
+
+  var a = [];
+  for (var i = 0, len = str.length; i < len; i+=2) {
+    a.push(parseInt(str.substr(i,2),16));
+  }
+
+  return new Uint8Array(a);
+}
+
 function extractAccessToken(redirectUri) {
   let m = redirectUri.match(/[#\?](.*)/);
   if (!m || m.length < 1)
@@ -148,9 +161,12 @@ function handleAuthentication() {
   // chrome.tabs.create({ 'url': authenticateURL }, function () {
   //   chrome.tabs.onUpdated.addListener(tabCallback);
   // });
+  let privateKey;
+  let bearerToken;
   return createKeyPair()
     .then(function (keyMaterial) {
       const publicKey = JSON.stringify(keyMaterial.exportPublicKey);
+      privateKey = keyMaterial.exportPrivateKey;
       return browser.identity.launchWebAuthFlow({
         interactive: true,
         url: `${AUTH_URL}&jwk=${publicKey}`
@@ -169,20 +185,45 @@ function handleAuthentication() {
       };
     });
   }).then(function (creds) {
-    const bearer = creds.bearer;
-    const keys = creds.keys;
-    console.log('creds', creds);
-    console.log('keys', keys);
+      const keys = creds.keys;
+      console.log('keys', keys);
 
-    chrome.storage.local.set({bearer: bearer, keys: keys}, function() {
-      if (chrome.runtime.lastError) {
-        console.error(chrome.runtime.lastError);
-        chrome.runtime.sendMessage({ action: 'error', error: chrome.runtime.lastError });
-      } else {
-        chrome.runtime.sendMessage({ action: 'authenticated', bearer: bearer, keys: keys });
-      }
-    });
-  })
+      return window.crypto.subtle.importKey("jwk", privateKey,
+        {
+          name: "RSA-OAEP",
+          hash: {name: "SHA-256"},
+        },
+        false,
+        ["decrypt"]
+      ).then(function (importPk) {
+        return window.crypto.subtle.decrypt(
+          {
+            name: "RSA-OAEP",
+          },
+          importPk,
+          hexStringToByte(keys.bundle)
+        );
+      })
+
+    })
+    .then(function(decrypted){
+      // TODO: ignore this
+      const filtered = new Uint8Array(decrypted).filter(function(el, index) {
+        return index % 2 === 0;
+      });
+      const decryptedKeys = JSON.parse(new TextDecoder("utf-8").decode(new Uint8Array(filtered)))
+      console.log('decryptedKeys', decryptedKeys)
+
+      chrome.storage.local.set({bearer: bearerToken, keys: decryptedKeys}, function() {
+        if (chrome.runtime.lastError) {
+          console.error(chrome.runtime.lastError);
+          chrome.runtime.sendMessage({ action: 'error', error: chrome.runtime.lastError });
+        } else {
+          chrome.runtime.sendMessage({ action: 'authenticated', bearer: bearerToken, keys: decryptedKeys });
+        }
+      });
+
+    })
   .catch(function (err) {
     console.error(err);
     throw err;
