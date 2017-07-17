@@ -1,5 +1,7 @@
 # Hoverpad
 
+## Hoverpad has been replaced with [Firefox Notes](https://github.com/mozilla/notes) which now opens in a Sidebar.
+
 ![Hoverpad](hoverpad.png)
 
 A persistent pad — click a button in your browser and add some notes,
